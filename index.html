@@ -389,6 +389,23 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
 .car-count{font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--gris)}
 .car-count b{color:var(--hueso);font-weight:500}
 
+
+/* sección legal */
+.legal{border-top:1px solid var(--linea);padding:56px 0 10px;margin-top:56px}
+.legal h4{font-family:var(--mono);font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--polvo);margin-bottom:22px}
+.legal details{border:1px solid var(--linea);background:var(--asfalto);margin-bottom:10px}
+.legal summary{cursor:pointer;padding:16px 20px;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--hueso);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.legal summary::after{content:"+";color:var(--polvo);font-size:15px}
+.legal details[open] summary::after{content:"–"}
+.legal .txt{padding:0 20px 20px;color:var(--gris);font-size:12.5px;line-height:1.9;max-width:900px}
+.legal .txt b{color:var(--hueso);font-weight:600}
+.legal .txt a{color:var(--polvo);text-decoration:underline}
+/* casilla de consentimiento en registro */
+.chk{display:flex;gap:10px;align-items:flex-start;margin:4px 0 16px}
+.chk input{width:16px;height:16px;margin-top:3px;accent-color:var(--polvo);flex-shrink:0}
+.chk label{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--gris);line-height:1.9;text-transform:none}
+.chk label a{color:var(--polvo);text-decoration:underline}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -625,6 +642,10 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
               <label for="rPass">Contraseña</label>
               <input id="rPass" type="password" placeholder="mínimo 6 caracteres">
             </div>
+            <div class="chk">
+              <input type="checkbox" id="rAcepto">
+              <label for="rAcepto">He leído y acepto el <a href="#legal">aviso de privacidad</a> y autorizo a TARMAC a usar las fotografías y videos en los que aparezco para su portafolio y publicidad, conforme a la <a href="#legal">autorización de uso de imagen</a>.</label>
+            </div>
             <button class="btn solid" type="submit">Registrarme</button>
             <button class="btn ghost" type="button" id="showLog" style="width:100%;margin-top:10px">Ya tengo cuenta</button>
             <div class="pass-err" id="regErr"></div>
@@ -672,6 +693,34 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
       <h2 class="display">¿Rodamos<span>?</span></h2>
       <p>Cuéntanos qué manejas, dónde corres y qué necesitas. Respondemos el mismo día.</p>
       <a class="btn solid" href="mailto:hola@tarmac.mx">hola@tarmac.mx</a>
+    </div>
+
+    <div class="legal" id="legal">
+      <h4>//// Legal</h4>
+      <details>
+        <summary>Aviso de uso de inteligencia artificial</summary>
+        <div class="txt">
+          TARMAC informa a sus usuarios y visitantes que este sitio web fue desarrollado con asistencia de herramientas de <b>inteligencia artificial</b>, y que algunos elementos visuales, de diseño, animación y sonido del sitio son generados o asistidos por IA. Las <b>fotografías y videos de nuestros clientes y corredores son obra original</b> capturada por el equipo de TARMAC; la IA no se utiliza para crear, alterar sustancialmente ni sustituir el contenido fotográfico entregado a nuestros clientes, salvo procesos habituales de revelado y edición profesional. Publicamos este aviso en atención a los principios de transparencia y buena fe previstos en la legislación mexicana de protección al consumidor.
+        </div>
+      </details>
+      <details>
+        <summary>Aviso de privacidad (LFPDPPP)</summary>
+        <div class="txt">
+          <b>Responsable:</b> TARMAC ("nosotros"), con medio de contacto en <a href="mailto:hola@tarmac.mx">hola@tarmac.mx</a>, es responsable del tratamiento de tus datos personales conforme a la <b>Ley Federal de Protección de Datos Personales en Posesión de los Particulares</b> y su Reglamento.<br><br>
+          <b>Datos que recabamos:</b> nombre, correo electrónico, número de corredor, categoría, vehículo, tiempos de competencia y las fotografías y videos en los que apareces.<br><br>
+          <b>Finalidades primarias:</b> crear y administrar tu cuenta, entregarte tus fotografías y videos, mostrarte tu información de carrera y brindarte soporte. <b>Finalidad secundaria (requiere tu consentimiento expreso):</b> uso de tu imagen con fines de portafolio y publicidad, conforme a la autorización descrita abajo.<br><br>
+          <b>Transferencias:</b> tus datos se almacenan en proveedores de infraestructura en la nube que actúan como encargados del tratamiento; no vendemos ni cedemos tus datos a terceros con fines distintos a los aquí descritos.<br><br>
+          <b>Derechos ARCO:</b> puedes ejercer en cualquier momento tus derechos de <b>Acceso, Rectificación, Cancelación y Oposición</b>, así como revocar tu consentimiento, escribiendo a <a href="mailto:hola@tarmac.mx">hola@tarmac.mx</a> con el asunto "Derechos ARCO". Responderemos en los plazos que marca la ley. Cualquier cambio a este aviso se publicará en esta misma página.
+        </div>
+      </details>
+      <details>
+        <summary>Autorización de uso de imagen</summary>
+        <div class="txt">
+          Al crear una cuenta en TARMAC y marcar la casilla de aceptación, <b>otorgas tu consentimiento expreso</b> — en términos de los artículos <b>86 y 87 de la Ley Federal del Derecho de Autor</b> y de las disposiciones aplicables en materia de derechos de la personalidad — para que TARMAC utilice, reproduzca y publique las fotografías y videos en los que apareces, capturados en los eventos y sesiones que cubrimos, con fines de <b>portafolio, promoción y publicidad</b> de TARMAC en este sitio web y en sus redes sociales oficiales.<br><br>
+          Esta autorización se otorga <b>sin límite territorial, por tiempo indefinido y sin contraprestación económica</b>, y no transfiere la titularidad de tus derechos de imagen. <b>Puedes revocarla en cualquier momento</b> escribiendo a <a href="mailto:hola@tarmac.mx">hola@tarmac.mx</a>; la revocación surtirá efectos hacia el futuro y retiraremos el material señalado de nuestros medios en un plazo razonable, sin afectar los usos realizados antes de la revocación. Las fotografías son obra de TARMAC y están protegidas por la Ley Federal del Derecho de Autor; tu galería privada y descargas se rigen por el paquete contratado.
+        </div>
+      </details>
+      <div class="mini" style="margin-top:14px">//// Última actualización: julio 2026 · Este contenido es informativo y no sustituye asesoría legal profesional.</div>
     </div>
     <div class="foot-base">
       <span>TARMAC //// The Art of Motion</span>
@@ -927,10 +976,14 @@ $("loginForm").addEventListener("submit", async ev => {
 $("regForm").addEventListener("submit", async ev => {
   ev.preventDefault();
   const err = $("regErr"); err.style.display = "none";
+  if(!$("rAcepto").checked){
+    err.textContent = "// Debes aceptar el aviso de privacidad y la autorización de uso de imagen.";
+    err.style.display = "block"; return;
+  }
   const { data, error } = await SB.auth.signUp({
     email: $("rEmail").value.trim(),
     password: $("rPass").value,
-    options: { data: { nombre: $("rNom").value.trim() } }
+    options: { data: { nombre: $("rNom").value.trim(), acepta_terminos: true } }
   });
   if(error){ err.textContent = "// " + error.message; err.style.display = "block"; return; }
   if(data.session){ APP.route(); }
