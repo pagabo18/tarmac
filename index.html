@@ -400,10 +400,9 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
   <div class="pre-pct"><b>////</b> CARGANDO <b id="prePct">0%</b></div>
   <div class="pre-bar"><i id="preBar"></i></div>
   <div class="pre-sound">
-    <p>Para una experiencia más inmersiva<br>usamos sonido de motor generado en vivo</p>
+    <p>Experiencia con sonido de motor en vivo<br>puedes silenciarlo cuando quieras con el botón SND</p>
     <div class="pre-btns">
-      <button class="btn solid" id="enterSnd">Iniciar con sonido</button>
-      <button class="btn ghost" id="enterMute">Sin sonido</button>
+      <button class="btn solid" id="enterSnd">Iniciar experiencia</button>
     </div>
   </div>
   <div class="pre-tag">THE ART OF MOTION <b>////</b> EXPERIENCIA 3D</div>
@@ -1084,7 +1083,7 @@ const ADMIN = {
         '<td>' + (c.moto || '—') + '</td><td>' + (c.categoria || '—') + '</td>' +
         '<td><select aria-label="Estatus">' + opts + '</select></td>' +
         '<td><input type="number" min="0" max="100" value="' + (c.avance || 0) + '" style="width:70px;background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:8px"> %</td>' +
-        '<td style="white-space:nowrap"><button class="btn sm ghost" data-a="tele">Tele</button> <button class="btn sm ghost" data-a="del">✕</button></td>';
+        '<td style="white-space:nowrap"><button class="btn sm ghost" data-a="edit">✎ Editar</button> <button class="btn sm ghost" data-a="fotos">Fotos ↑</button> <button class="btn sm ghost" data-a="tele">Tele</button> <button class="btn sm ghost" data-a="del">✕</button></td>';
       tr.querySelector("select").addEventListener("change", async e => {
         await SB.from("corredores").update({ estatus: e.target.value }).eq("id", c.id);
       });
@@ -1097,9 +1096,45 @@ const ADMIN = {
         this.loadClients();
       });
       tr.querySelector('[data-a="tele"]').addEventListener("click", () => this.editTele(c, tr));
+      tr.querySelector('[data-a="edit"]').addEventListener("click", () => this.editCorredor(c, tr));
+      tr.querySelector('[data-a="fotos"]').addEventListener("click", () => this.gotoUpload(c));
       tb.appendChild(tr);
     });
     if(!cs || !cs.length) tb.innerHTML = '<tr><td colspan="7" class="mini" style="padding:18px">//// AGREGA A TU PRIMER CORREDOR ABAJO</td></tr>';
+  },
+
+  editCorredor(c, tr){
+    if(tr.nextSibling?.classList?.contains("edit-row")){ tr.nextSibling.remove(); return; }
+    const row = document.createElement("tr"); row.className = "edit-row";
+    row.innerHTML = '<td colspan="7" style="background:var(--carbon2)"><div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end;padding:6px 0">' +
+      '<div class="field" style="margin:0"><label>Nombre</label><input data-f="nombre" value="' + (c.nombre||'').replace(/"/g,'&quot;') + '"></div>' +
+      '<div class="field" style="margin:0"><label>Nº</label><input data-f="numero" type="number" value="' + (c.numero ?? '') + '"></div>' +
+      '<div class="field" style="margin:0"><label>Email (para su acceso)</label><input data-f="email" type="email" value="' + (c.email||'') + '" placeholder="corredor@email.com"></div>' +
+      '<div class="field" style="margin:0"><label>Moto / Auto</label><input data-f="moto" value="' + (c.moto||'').replace(/"/g,'&quot;') + '"></div>' +
+      '<div class="field" style="margin:0"><label>Categoría</label><input data-f="categoria" value="' + (c.categoria||'').replace(/"/g,'&quot;') + '"></div>' +
+      '<button class="btn solid sm" data-a="save" style="height:42px">Guardar</button></div></td>';
+    tr.after(row);
+    row.querySelector('[data-a="save"]').addEventListener("click", async () => {
+      const upd = {};
+      row.querySelectorAll("input[data-f]").forEach(i => {
+        upd[i.dataset.f] = i.dataset.f === "numero" ? (+i.value || null) : i.value.trim();
+      });
+      const { error } = await SB.from("corredores").update(upd).eq("id", c.id);
+      if(error){ alert("Error: " + error.message); return; }
+      row.querySelector('[data-a="save"]').textContent = "Guardado ✓";
+      setTimeout(() => { row.remove(); this.loadClients(); }, 600);
+    });
+  },
+
+  async gotoUpload(c){
+    setTab("subir");
+    $("upProj").value = this.proyecto.id;
+    $("upProj").dispatchEvent(new Event("change"));
+    /* esperar a que carguen los corredores del proyecto y preseleccionar */
+    setTimeout(() => {
+      $("upRider").value = c.id;
+      $("drop").scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 500);
   },
 
   editTele(c, tr){
@@ -1170,12 +1205,14 @@ $("acAdd").addEventListener("click", async () => {
 });
 
 /* tabs admin */
+function setTab(t){
+  document.querySelectorAll("#admTabs button").forEach(x => x.classList.toggle("on", x.dataset.t === t));
+  $("tab-proyectos").style.display = t === "proyectos" ? "block" : "none";
+  $("tab-subir").style.display = t === "subir" ? "block" : "none";
+}
 $("admTabs").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
-  document.querySelectorAll("#admTabs button").forEach(x => x.classList.remove("on"));
-  b.classList.add("on");
-  $("tab-proyectos").style.display = b.dataset.t === "proyectos" ? "block" : "none";
-  $("tab-subir").style.display = b.dataset.t === "subir" ? "block" : "none";
+  setTab(b.dataset.t);
 });
 function showProjects(){ ADMIN.showList(); }
 
@@ -1340,7 +1377,6 @@ document.getElementById("sndBtn").addEventListener("click", () => ENG.toggle());
     if(sound) ENG.start();
   }
   document.getElementById("enterSnd").addEventListener("click", () => enter(true));
-  document.getElementById("enterMute").addEventListener("click", () => enter(false));
 })();
 
 /* ---------- CURSOR PERSONALIZADO ---------- */
