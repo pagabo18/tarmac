@@ -1391,12 +1391,27 @@ const ENG = (function(){
       sub.frequency.setTargetAtTime(26*Math.min(target,1.6), ctx.currentTime,.08);
       lp.frequency.setTargetAtTime(260+520*(target-1), ctx.currentTime,.08); },
     blip(f){ if(!ctx || !on) return;
-      const o=ctx.createOscillator(), gg=ctx.createGain();
-      o.type="square"; o.frequency.value=f||340; gg.gain.value=.0;
-      o.connect(gg).connect(ctx.destination);
-      gg.gain.setValueAtTime(.06, ctx.currentTime);
-      gg.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+.09);
-      o.start(); o.stop(ctx.currentTime+.1); }
+      /* "tick" suave de obturador: ruido filtrado + golpe grave sutil */
+      const t = ctx.currentTime;
+      const dur = .05;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for(let i = 0; i < d.length; i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const bp = ctx.createBiquadFilter(); bp.type = "bandpass";
+      bp.frequency.value = Math.min(3200, (f||300) * 7); bp.Q.value = 1.4;
+      const g1 = ctx.createGain();
+      g1.gain.setValueAtTime(.028, t);
+      g1.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      src.connect(bp).connect(g1).connect(ctx.destination);
+      src.start(t);
+      const o = ctx.createOscillator(), g2 = ctx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(140, t);
+      o.frequency.exponentialRampToValueAtTime(70, t + .06);
+      g2.gain.setValueAtTime(.02, t);
+      g2.gain.exponentialRampToValueAtTime(.0001, t + .07);
+      o.connect(g2).connect(ctx.destination);
+      o.start(t); o.stop(t + .08); }
   };
 })();
 document.getElementById("sndBtn").addEventListener("click", () => ENG.toggle());
