@@ -626,8 +626,8 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
           <!-- CORREDOR: número → evento → contraseña -->
           <form id="riderLoginForm" novalidate>
             <div class="field">
-              <label for="rlNum">Tu número de competidor</label>
-              <input id="rlNum" type="number" inputmode="numeric" autocomplete="off" placeholder="Ej. 44">
+              <label for="rlNum">Tu número o tu correo</label>
+              <input id="rlNum" type="text" autocomplete="off" placeholder="Ej. 44 o tucorreo@ejemplo.com">
             </div>
             <div class="field" id="rlEventoWrap" style="display:none">
               <label for="rlEvento">Tu evento</label>
@@ -639,7 +639,7 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
             </div>
             <button class="btn solid" type="submit" id="rlSubmit">Ver mis eventos</button>
             <div class="pass-err" id="rlErr"></div>
-            <div class="pass-note">Entra con el número con el que corriste. ¿Sin contraseña? Pídesela a tu fotógrafo.</div>
+            <div class="pass-note">Entra con tu número o con el correo que registraste en tus ajustes. ¿Sin contraseña? Pídesela a tu fotógrafo.</div>
           </form>
 
           <!-- EQUIPO TARMAC: email + contraseña -->
@@ -828,15 +828,16 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
       </div>
       <div class="panel-body">
         <div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end;margin-bottom:20px">
+          <div class="field" style="margin:0"><label>Tu número</label><input id="setNum" type="text" disabled style="opacity:.65;cursor:not-allowed"></div>
           <div class="field" style="margin:0"><label>Tu nombre</label><input id="setNombre" type="text" placeholder="Tu nombre"></div>
-          <div class="field" style="margin:0"><label>Tu correo (para avisos)</label><input id="setEmail" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com"></div>
+          <div class="field" style="margin:0"><label>Tu correo (para avisos y para entrar)</label><input id="setEmail" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com"></div>
           <button class="btn solid" type="button" id="setGuardar" style="height:46px">Guardar mis datos</button>
         </div>
         <div class="chk" style="align-items:flex-start">
           <input type="checkbox" id="setCompartir">
           <label for="setCompartir">Permito que TARMAC use mis fotos y videos en su <b>página principal</b> y redes oficiales, con fines de portafolio y publicidad, conforme al <a href="#legal" onclick="closePortals()">aviso de privacidad</a>. Puedo revocarlo cuando quiera.</label>
         </div>
-        <div class="mini" style="margin-top:10px">//// Tu nombre y correo son solo para contacto — sigues entrando con tu número.</div>
+        <div class="mini" style="margin-top:10px">//// Puedes entrar con tu número o con tu correo registrado. El número te lo asigna tu fotógrafo.</div>
       </div>
     </div>
   </div>
@@ -1121,34 +1122,49 @@ $("rlNum").addEventListener("input", rlReset);
 $("riderLoginForm").addEventListener("submit", async ev => {
   ev.preventDefault();
   const err = $("rlErr"); err.style.display = "none"; err.style.color = "";
-  const num = parseInt($("rlNum").value, 10);
-  if(!Number.isInteger(num)){ err.textContent = "// Escribe tu número de competidor."; err.style.display = "block"; return; }
+  const val = $("rlNum").value.trim();
+  if(!val){ err.textContent = "// Escribe tu número o tu correo."; err.style.display = "block"; return; }
+  const esCorreo = val.includes("@");
 
   /* Etapa 2: ya cargamos eventos → iniciar sesión */
   if(RL_EVENTOS.length){
-    const pid = $("rlEvento").value;
+    const sel = RL_EVENTOS[+$("rlEvento").value] || RL_EVENTOS[0];
     const pass = $("rlPass").value;
     if(!pass){ err.textContent = "// Escribe tu contraseña."; err.style.display = "block"; return; }
-    const email = pid + "_" + num + DOM_SINT;
+    const email = sel.proyecto_id + "_" + sel.numero + DOM_SINT;
     const { error } = await SB.auth.signInWithPassword({ email, password: pass });
-    if(error){ err.textContent = "// " + (error.message === "Invalid login credentials" ? "Contraseña incorrecta para ese número y evento." : error.message); err.style.display = "block"; return; }
+    if(error){ err.textContent = "// " + (error.message === "Invalid login credentials" ? "Contraseña incorrecta para ese número/correo y evento." : error.message); err.style.display = "block"; return; }
     $("rlPass").value = "";
     APP.route();
     return;
   }
 
-  /* Etapa 1: buscar los eventos de ese número */
+  /* Etapa 1: buscar los eventos por número o por correo */
   $("rlSubmit").textContent = "Buscando…"; $("rlSubmit").disabled = true;
-  const { data, error } = await SB.rpc("eventos_por_numero", { p_num: num });
+  let data, error;
+  if(esCorreo){
+    ({ data, error } = await SB.rpc("eventos_por_correo", { p_email: val }));
+  } else {
+    const num = parseInt(val, 10);
+    if(!Number.isInteger(num)){
+      $("rlSubmit").disabled = false; $("rlSubmit").textContent = "Ver mis eventos";
+      err.textContent = "// Escribe un número válido o tu correo."; err.style.display = "block"; return;
+    }
+    ({ data, error } = await SB.rpc("eventos_por_numero", { p_num: num }));
+    /* eventos_por_numero no devuelve el número: se lo agregamos para armar el correo interno */
+    if(data) data = data.map(e => ({ proyecto_id: e.proyecto_id, nombre: e.nombre, fecha: e.fecha, numero: num }));
+  }
   $("rlSubmit").disabled = false;
   if(error){ $("rlSubmit").textContent = "Ver mis eventos"; err.textContent = "// " + error.message; err.style.display = "block"; return; }
   if(!data || !data.length){
     $("rlSubmit").textContent = "Ver mis eventos";
-    err.textContent = "// No encontramos el número " + num + ". Pídele a tu fotógrafo que te dé de alta.";
+    err.textContent = esCorreo
+      ? "// No encontramos ese correo. Verifica que lo hayas guardado en tus Ajustes, o entra con tu número."
+      : "// No encontramos el número " + val + ". Pídele a tu fotógrafo que te dé de alta.";
     err.style.display = "block"; return;
   }
   RL_EVENTOS = data;
-  $("rlEvento").innerHTML = data.map(e => '<option value="' + e.proyecto_id + '">' + e.nombre + (e.fecha ? " · " + e.fecha : "") + '</option>').join("");
+  $("rlEvento").innerHTML = data.map((e, i) => '<option value="' + i + '">' + e.nombre + (e.fecha ? " · " + e.fecha : "") + '</option>').join("");
   $("rlEventoWrap").style.display = "block";
   $("rlPassWrap").style.display = "block";
   $("rlSubmit").textContent = "Entrar";
@@ -1169,13 +1185,15 @@ const RIDER = {
       $("editStatus").textContent = "Tu fotógrafo te asignará a una sesión pronto";
       $("pgal").innerHTML = '<div class="mini" style="grid-column:1/-1;padding:30px;text-align:center">//// EN CUANTO SUBAMOS TUS FOTOS APARECERÁN AQUÍ</div>';
       $("dlAll").style.display = "none";
+      $("setNum").value = "—";
       $("setNombre").value = APP.perfil.nombre || "";
       $("setEmail").value = "";
       $("setCompartir").checked = !!APP.perfil.acepta_compartir;
       return;
     }
     const c = cs[0]; this.corredor = c;
-    /* Ajustes: precargar nombre, correo y consentimiento */
+    /* Ajustes: precargar número, nombre, correo y consentimiento */
+    $("setNum").value = c.numero ?? "—";
     $("setNombre").value = c.nombre || "";
     $("setEmail").value  = c.email || "";
     $("setCompartir").checked = !!APP.perfil.acepta_compartir;
