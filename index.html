@@ -866,7 +866,7 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
         </div>
         <div class="chk" style="align-items:flex-start">
           <input type="checkbox" id="setCompartir">
-          <label for="setCompartir">Permito que TARMAC use mis fotos y videos en su <b>página principal</b> y redes oficiales, con fines de portafolio y publicidad, conforme al <a href="#legal" onclick="closePortals()">aviso de privacidad</a>. Puedo revocarlo cuando quiera.</label>
+          <label for="setCompartir">Permito que TARMAC use mis fotos y videos en su <b>página principal</b> y redes oficiales, con fines de portafolio y publicidad, conforme al <a href="#legal" onclick="closePortals()">aviso de privacidad</a>. Para retirar este permiso más adelante, deberé escribir a TARMAC por Instagram <b>@tarmac_official_</b>.</label>
         </div>
         <div class="mini" style="margin-top:10px">//// Puedes entrar con tu número o con tu correo registrado. El número te lo asigna tu fotógrafo.</div>
       </div>
@@ -1226,7 +1226,7 @@ const RIDER = {
       $("setNum").value = "—";
       $("setNombre").value = APP.perfil.nombre || "";
       $("setEmail").value = "";
-      $("setCompartir").checked = !!APP.perfil.acepta_compartir;
+      $("setCompartir").checked = !!APP.perfil.acepta_compartir; $("setCompartir").disabled = !!APP.perfil.acepta_compartir;
       return;
     }
     const c = cs[0]; this.corredor = c;
@@ -1234,7 +1234,7 @@ const RIDER = {
     $("setNum").value = c.numero ?? "—";
     $("setNombre").value = c.nombre || "";
     $("setEmail").value  = c.email || "";
-    $("setCompartir").checked = !!APP.perfil.acepta_compartir;
+    $("setCompartir").checked = !!APP.perfil.acepta_compartir; $("setCompartir").disabled = !!APP.perfil.acepta_compartir;
     $("setMsg").textContent = "";
     await this.pintarCorredor(c);
   },
@@ -1361,11 +1361,19 @@ $("setGuardar").addEventListener("click", async () => {
 /* Ajustes del corredor: consentimiento para compartir en la web */
 $("setCompartir").addEventListener("change", async e => {
   const msg = $("setMsg"); msg.style.color = "";
-  const val = e.target.checked;
-  const { error } = await SB.rpc("actualizar_consentimiento_compartir", { p_acepta: val });
-  if(error){ e.target.checked = !val; msg.style.color = "#D97B7B"; msg.textContent = "// " + error.message; return; }
-  if(APP.perfil) APP.perfil.acepta_compartir = val;
-  msg.style.color = "var(--polvo)"; msg.textContent = val ? "✓ Gracias, autorizaste compartir tus fotos" : "✓ Preferencia guardada (no compartir)";
+  if(!e.target.checked){
+    e.target.checked = true;
+    msg.style.color = "#D97B7B";
+    msg.textContent = "// Para retirar tu permiso, escríbenos por Instagram @tarmac_official_.";
+    return;
+  }
+  const ok = confirm("Autorizas a TARMAC a usar tus fotos y videos en su página principal y redes, con fines de portafolio y publicidad.\n\nIMPORTANTE: si más adelante quieres retirar este permiso, deberás solicitarlo por Instagram a @tarmac_official_ (no se puede desactivar desde aquí).\n\n¿Confirmas?");
+  if(!ok){ e.target.checked = false; return; }
+  const { error } = await SB.rpc("actualizar_consentimiento_compartir", { p_acepta: true });
+  if(error){ e.target.checked = false; msg.style.color = "#D97B7B"; msg.textContent = "// " + error.message; return; }
+  if(APP.perfil) APP.perfil.acepta_compartir = true;
+  e.target.disabled = true;
+  msg.style.color = "var(--polvo)"; msg.textContent = "✓ ¡Gracias! Autorizaste compartir tus fotos.";
 });
 
 /* Mis tiempos del corredor: editor con flechitas; mejor vuelta, total y diferencias automáticos */
@@ -1549,7 +1557,7 @@ const ADMIN = {
         linea2 = [ "✉ " + (c.email || "sin correo"),
                    (c.ultimo_acceso ? "entró " + fdate(c.ultimo_acceso) : "aún no entra"),
                    (c.descarga_veces ? "⬇ descargó " + c.descarga_veces + "×" : "sin descargar"),
-                   (c.acepta_compartir ? "🌐 comparte" : "") ].filter(Boolean).join(" · ");
+                   (c.acepta_compartir ? '🌐 comparte <a href="#" data-a="quitarcomp" style="color:#D97B7B">(quitar)</a>' : '') ].filter(Boolean).join(" · ");
       } else { linea2 = "sin acceso aún"; }
       tr.innerHTML = '<td class="n">#' + (c.numero ?? "—") + '</td>' +
         '<td>' + c.nombre +
@@ -1581,6 +1589,8 @@ const ADMIN = {
       tr.querySelector('[data-a="edit"]').addEventListener("click", () => this.editCorredor(c, tr));
       tr.querySelector('[data-a="acceso"]').addEventListener("click", () => this.editAcceso(c, tr));
       tr.querySelector('[data-a="fotos"]').addEventListener("click", () => this.gotoUpload(c));
+      var qc = tr.querySelector('[data-a="quitarcomp"]');
+      if(qc) qc.addEventListener("click", (ev) => { ev.preventDefault(); this.quitarCompartir(c); });
       tb.appendChild(tr);
     });
     if(!list.length) tb.innerHTML = '<tr><td colspan="7" class="mini" style="padding:18px">//// ' + ((this._cs && this._cs.length) ? 'NINGÚN CORREDOR CON ESE ESTATUS' : 'AGREGA A TU PRIMER CORREDOR ABAJO') + '</td></tr>';
@@ -1611,6 +1621,14 @@ const ADMIN = {
     $("teleEditPanel").style.display = "";
     $("riderLogout").style.display = "";
     $("riderWho").innerHTML = "Sesión iniciada";
+  },
+
+  async quitarCompartir(c){
+    if(!c.usuario_id) return;
+    if(!confirm("¿Retirar el permiso de compartir de #" + (c.numero ?? "—") + " (" + c.nombre + ")?\n\nÚsalo cuando el corredor lo pida por Instagram. A partir de ahora sus fotos no deberán mostrarse en la página.")) return;
+    const { error } = await SB.rpc("admin_set_compartir", { p_usuario_id: c.usuario_id, p_valor: false });
+    if(error){ alert("Error: " + error.message); return; }
+    this.loadClients();
   },
 
   async darAccesoTodos(){
