@@ -1,6 +1,6 @@
 # CLAUDE.md — Proyecto TARMAC
 
-Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: 2026-07-03.
+Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: 2026-07-07 (login por número + descarga + provisión de acceso).
 
 ## Qué es Tarmac
 
@@ -42,15 +42,30 @@ Tablas (todas con RLS activado):
 - `perfiles` (id = auth.users.id, nombre, es_admin) — se crea sola al registrarse vía trigger `crear_perfil`
 - `admins_autorizados` (email) — emails que reciben es_admin automáticamente al registrarse. Actuales: pagabo18@hotmail.com, brianrso@hotmail.com
 - `proyectos` (nombre, disciplina, fecha, ubicacion, estatus)
-- `corredores` (proyecto_id, usuario_id, numero, nombre, email, moto, categoria, color_galeria, diseno_galeria, estatus, avance, posicion, mejor_vuelta, tiempo_total, velocidad_max)
+- `corredores` (proyecto_id, usuario_id, numero, nombre, email, **descarga_url**, moto, categoria, color_galeria, diseno_galeria, estatus, avance, posicion, mejor_vuelta, tiempo_total, velocidad_max) — `descarga_url` = link externo (Drive/WeTransfer) para el botón "Descargar todas mis fotos" del portal
+- `perfiles` incluye además `acepta_terminos` (bool) y `acepta_fecha` — consentimiento de uso de imagen
 - `vueltas` (corredor_id, numero, tiempo, diferencia, posicion)
 - `fotos` (corredor_id, ruta, frame, es_video, favorita)
 
 Storage: bucket privado `fotos`. Rutas: `{corredor_id}/{timestamp}-{nombre_archivo}`. El corredor ve sus fotos con URLs firmadas de 1 hora.
 
-Vinculación corredor↔cuenta: el admin pone el email en la fila del corredor; cuando ese email se registra, el trigger lo vincula (y viceversa, trigger `vincular_corredor` al insertar/editar email). Estatus posibles: Sin editar, En edición, Revisión, Entregado.
+Estatus posibles: Sin editar, En edición, Revisión, Entregado.
 
 Seguridad (RLS): los admins (perfiles.es_admin, vía función `soy_admin()`) tienen todo; cada corredor solo SELECT de sus filas (proyecto, corredor, vueltas, fotos) y UPDATE de su color/diseño/favoritas. Bucket: admin todo, corredor solo lectura de sus archivos.
+
+## Acceso por número (modelo actual — 2026-07-07)
+
+El login del corredor **ya NO es por email**. El corredor entra con su **número de competidor + evento + contraseña**; el equipo (Gabriel/Brian) entra con email+contraseña (toggle "Soy corredor / Equipo TARMAC" en la sección Acceso). No hay auto-registro público.
+
+Mecánica (todo detrás de un **email sintético** invisible para el corredor):
+- Email sintético = `{proyecto_id}_{numero}@tarmac.mx`. Trigger `vincular_por_email_sintetico` (en auth.users) parsea ese email y pone `usuario_id` en la(s) fila(s) de corredor con ese proyecto+número.
+- Login corredor (frontend, sin sesión): `SB.rpc('eventos_por_numero', {p_num})` → devuelve los eventos de ese número (deduplicados) → el corredor elige evento → `signInWithPassword({ email: pid+'_'+num+'@tarmac.mx', password })`. La RPC es SECURITY DEFINER y `anon` puede ejecutarla.
+- **Contraseñas gestionadas por el admin** vía Edge Function **`provisionar_corredor`** (usa `service_role`, que Supabase inyecta; NUNCA en el frontend). Verifica que el llamador es admin, crea/actualiza la cuenta con `email_confirm:true` y vincula `usuario_id`. El panel admin la llama con el JWT del admin (botón "🔑 Acceso" por corredor y campo "Contraseña" en alta). Como usa `email_confirm:true`, NO hace falta desactivar "Confirm email" en Supabase.
+- Consentimiento de uso de imagen: como se quitó el registro con checkbox, se pide en el **primer login del corredor** (modal `consentModal`) si `perfiles.acepta_terminos` es falso; el botón llama a la RPC `aceptar_terminos()` (SECURITY DEFINER, solo `authenticated`, actualiza su propia fila).
+
+Migraciones/funciones relevantes: `login_numero_descarga`, `eventos_por_numero_distinct`, `aceptar_terminos_rpc`; Edge Function `provisionar_corredor`.
+
+⚠️ IMPORTANTE (lección de esta feature): el trabajo de frontend de la sesión del 2026-07-07 se **perdió** porque nunca se commiteó a git ni se guardó en disco (solo sobrevivieron las migraciones, que van server-side). **Commitear `index.html` a git en cuanto un cambio quede estable.**
 
 ## Estado actual (2026-07-03)
 
@@ -62,9 +77,9 @@ Seguridad (RLS): los admins (perfiles.es_admin, vía función `soy_admin()`) tie
 ## Funcionalidad del sitio
 
 - Público: hero slideshow, disciplinas, tira de contactos, showreel, carrusel, sección de acceso, servicios, contacto.
-- Registro/login reales (supabase-js v2 por CDN jsdelivr; JSZip por cdnjs). Al iniciar sesión, enruta por `perfiles.es_admin`: admin → panel admin, corredor → su portal. Sesión persistente (auto-abre el portal al recargar).
-- Portal corredor: número dorsal gigante, tags (moto, categoría, proyecto), telemetría (posición, mejor vuelta, tiempo total, vel. máx), tabla de vueltas (mejor vuelta resaltada ★), galería con favoritas ★ (persisten), descarga en original, y personalización de color (5 swatches) y diseño (mosaico/rollo) que SE GUARDAN en su fila.
-- Panel admin: crear proyectos; por proyecto: lista de corredores con estatus (select), avance (%), botón "Tele" (edita telemetría + vueltas en formato "tiempo, diferencia, posición" una por línea), eliminar; agregar corredor (nombre, nº, email, moto, categoría); subir archivos sueltos o ZIP con progreso.
+- Login real (supabase-js v2 por CDN jsdelivr; JSZip por cdnjs). Corredor: número → evento → contraseña; equipo: email → contraseña (ver "Acceso por número" arriba). Al iniciar sesión, enruta por `perfiles.es_admin`: admin → panel admin, corredor → su portal. Sesión persistente (auto-abre el portal al recargar).
+- Portal corredor: número dorsal gigante, tags (moto, categoría, proyecto), telemetría (posición, mejor vuelta, tiempo total, vel. máx), tabla de vueltas (mejor vuelta resaltada ★), **botón "Descargar todas mis fotos"** (si hay `descarga_url`), galería con favoritas ★ (persisten), descarga en original, y personalización de color (5 swatches) y diseño (mosaico/rollo) que SE GUARDAN en su fila. En el primer login pide consentimiento de uso de imagen (modal).
+- Panel admin: crear proyectos; por proyecto: lista de corredores con estatus de acceso ("con acceso ✓ / sin acceso"), estatus (select), avance (%), botón **"🔑 Acceso"** (crea/resetea contraseña vía Edge Function), "Tele" (telemetría + vueltas "tiempo, diferencia, posición" una por línea), "✎ Editar" (incluye `descarga_url`), eliminar; agregar corredor (nombre, nº, moto, categoría, link de descarga, contraseña opcional); subir archivos sueltos o ZIP con progreso.
 
 ## Convenciones y preferencias del cliente
 

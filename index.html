@@ -618,7 +618,32 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
             <span class="t">Acceso</span>
             <span class="chip">Paddock pass</span>
           </div>
-          <form id="loginForm" novalidate>
+          <div class="seg" id="accesoModo" style="margin-bottom:16px">
+            <button class="on" type="button" data-m="corredor">Soy corredor</button>
+            <button type="button" data-m="admin">Equipo TARMAC</button>
+          </div>
+
+          <!-- CORREDOR: número → evento → contraseña -->
+          <form id="riderLoginForm" novalidate>
+            <div class="field">
+              <label for="rlNum">Tu número de competidor</label>
+              <input id="rlNum" type="number" inputmode="numeric" autocomplete="off" placeholder="Ej. 44">
+            </div>
+            <div class="field" id="rlEventoWrap" style="display:none">
+              <label for="rlEvento">Tu evento</label>
+              <select id="rlEvento" style="width:100%;background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:12px"></select>
+            </div>
+            <div class="field" id="rlPassWrap" style="display:none">
+              <label for="rlPass">Contraseña</label>
+              <input id="rlPass" type="password" autocomplete="current-password" placeholder="La que te dio tu fotógrafo">
+            </div>
+            <button class="btn solid" type="submit" id="rlSubmit">Ver mis eventos</button>
+            <div class="pass-err" id="rlErr"></div>
+            <div class="pass-note">Entra con el número con el que corriste. ¿Sin contraseña? Pídesela a tu fotógrafo.</div>
+          </form>
+
+          <!-- EQUIPO TARMAC: email + contraseña -->
+          <form id="loginForm" novalidate style="display:none">
             <div class="field">
               <label for="u">Email</label>
               <input id="u" type="email" autocomplete="username" placeholder="tu@email.com">
@@ -628,31 +653,8 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
               <input id="p" type="password" autocomplete="current-password" placeholder="••••••••">
             </div>
             <button class="btn solid" type="submit">Entrar</button>
-            <button class="btn ghost" type="button" id="showReg" style="width:100%;margin-top:10px">Crear cuenta de corredor</button>
             <div class="pass-err" id="err"></div>
-            <div class="pass-note">Acceso privado — cada corredor ve únicamente su sesión.</div>
-          </form>
-          <form id="regForm" novalidate style="display:none">
-            <div class="field">
-              <label for="rNom">Nombre completo</label>
-              <input id="rNom" type="text" placeholder="Carlos Ramírez">
-            </div>
-            <div class="field">
-              <label for="rEmail">Email</label>
-              <input id="rEmail" type="email" placeholder="tu@email.com">
-            </div>
-            <div class="field">
-              <label for="rPass">Contraseña</label>
-              <input id="rPass" type="password" placeholder="mínimo 6 caracteres">
-            </div>
-            <div class="chk">
-              <input type="checkbox" id="rAcepto">
-              <label for="rAcepto">He leído y acepto el <a href="#legal">aviso de privacidad</a> y autorizo a TARMAC a usar las fotografías y videos en los que aparezco para su portafolio y publicidad, conforme a la <a href="#legal">autorización de uso de imagen</a>.</label>
-            </div>
-            <button class="btn solid" type="submit">Registrarme</button>
-            <button class="btn ghost" type="button" id="showLog" style="width:100%;margin-top:10px">Ya tengo cuenta</button>
-            <div class="pass-err" id="regErr"></div>
-            <div class="pass-note">Usa el mismo email con el que te registró tu fotógrafo para ver tus fotos al instante.</div>
+            <div class="pass-note">Acceso del equipo TARMAC.</div>
           </form>
         </div>
       </div>
@@ -734,6 +736,20 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
 </footer>
 
 <!-- ============ PORTAL DEL CORREDOR ============ -->
+<div id="consentModal" role="dialog" aria-label="Autorización de uso de imagen" style="display:none;position:fixed;inset:0;z-index:120;background:rgba(6,8,12,.92);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:24px">
+  <div class="hud" style="max-width:520px;width:100%;background:var(--carbon);border:1px solid var(--linea);padding:28px">
+    <div class="pass-head" style="margin-bottom:14px"><span class="t">Antes de entrar</span><span class="chip">Uso de imagen</span></div>
+    <p style="color:var(--polvo);font-size:14px;line-height:1.6;margin-bottom:16px">Para mostrarte tus fotos necesitamos tu autorización. Léela y acéptala para continuar.</p>
+    <div class="chk" style="margin-bottom:18px">
+      <input type="checkbox" id="cmAcepto">
+      <label for="cmAcepto">He leído y acepto el <a href="#legal" onclick="closePortals()">aviso de privacidad</a> y autorizo a TARMAC a usar las fotografías y videos en los que aparezco para su portafolio y publicidad, conforme a la <a href="#legal" onclick="closePortals()">autorización de uso de imagen</a>.</label>
+    </div>
+    <button class="btn solid" id="cmAceptar" style="width:100%">Acepto y entrar</button>
+    <button class="btn ghost" onclick="APP.logout()" style="width:100%;margin-top:10px">Salir</button>
+    <div class="pass-err" id="cmErr"></div>
+  </div>
+</div>
+
 <div class="portal" id="riderPortal" role="dialog" aria-label="Portal del corredor">
   <div class="portal-top">
     <a class="logo" href="#top" onclick="closePortals()">TARMA<span>C</span> <span class="slashes">////</span> <span style="font-size:12px;font-stretch:100%;color:var(--gris)">PORTAL</span></a>
@@ -799,6 +815,7 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
             <div class="bar" style="height:7px"><i id="rProg" style="width:0%"></i></div>
           </div>
         </div>
+        <a id="dlAll" href="#" target="_blank" rel="noopener" class="btn solid" style="display:none;text-align:center;margin-bottom:20px">⬇ Descargar TODAS mis fotos</a>
         <div class="pgal" id="pgal"></div>
         <div class="mini" style="margin-top:16px">//// Marca ★ tus favoritas para edición extra o impresión · Descargas en calidad original</div>
       </div>
@@ -846,16 +863,17 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
             </table>
           </div>
         </div>
-        <div class="panel"><div class="panel-head"><span class="t">Agregar corredor</span><span class="r">Si el email ya tiene cuenta, se vincula solo</span></div>
+        <div class="panel"><div class="panel-head"><span class="t">Agregar corredor</span><span class="r">Si pones contraseña, se le crea su acceso al instante</span></div>
         <div class="panel-body" style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end">
           <div class="field" style="margin:0"><label>Nombre</label><input id="acNombre" type="text" placeholder="Luis Ortega"></div>
           <div class="field" style="margin:0"><label>Nº</label><input id="acNum" type="number" placeholder="44"></div>
-          <div class="field" style="margin:0"><label>Email</label><input id="acEmail" type="email" placeholder="luis@email.com"></div>
           <div class="field" style="margin:0"><label>Moto / Auto</label><input id="acMoto" type="text" placeholder="KTM 450"></div>
           <div class="field" style="margin:0"><label>Categoría</label><input id="acCat" type="text" placeholder="Expertos"></div>
+          <div class="field" style="margin:0"><label>Link de descarga</label><input id="acDesc" type="url" placeholder="https://drive… (opcional)"></div>
+          <div class="field" style="margin:0"><label>Contraseña de acceso</label><input id="acPass" type="text" autocomplete="off" placeholder="mín. 6 (opcional)"></div>
           <button class="btn solid" type="button" id="acAdd" style="height:46px">+ Agregar</button>
         </div></div>
-        <div class="mini">//// El estatus y avance que asignes aquí es lo que ve el corredor en su portal. Usa "Tele" para capturar posición y tiempos.</div>
+        <div class="mini">//// El corredor entra con su Nº + su contraseña. Puedes crear/resetear la contraseña por corredor con el botón "🔑 Acceso". El "Link de descarga" es el botón para bajar todas sus fotos (Drive, WeTransfer, etc.).</div>
       </div>
     </div>
 
@@ -975,12 +993,26 @@ document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 
 
 /* =================== APP REAL — Supabase =================== */
-const SB = supabase.createClient(
-  "https://hhjkhaogrzjzdqdpracm.supabase.co",
-  "sb_publishable_yOtSabdEwOy6RY2gH6wKIg_M6i-HHNc"
-);
+const SB_URL = "https://hhjkhaogrzjzdqdpracm.supabase.co";
+const SB_KEY = "sb_publishable_yOtSabdEwOy6RY2gH6wKIg_M6i-HHNc";
+const SB = supabase.createClient(SB_URL, SB_KEY);
 const $ = id => document.getElementById(id);
 const ESTATUS = ["Sin contenido","Sin editar","En edición","Revisión","Entregado"];
+const DOM_SINT = "@tarmac.mx";
+
+/* Llama a la Edge Function que crea/resetea el acceso de un corredor (solo admin). */
+async function provisionarCorredor(proyecto_id, numero, password){
+  const { data:{ session } } = await SB.auth.getSession();
+  if(!session) throw new Error("Sesión expirada, vuelve a entrar.");
+  const res = await fetch(SB_URL + "/functions/v1/provisionar_corredor", {
+    method: "POST",
+    headers: { "Content-Type":"application/json", apikey: SB_KEY, Authorization: "Bearer " + session.access_token },
+    body: JSON.stringify({ proyecto_id, numero, password })
+  });
+  const out = await res.json().catch(() => ({ error: "Respuesta inválida del servidor" }));
+  if(!res.ok) throw new Error(out.error || ("Error " + res.status));
+  return out;
+}
 
 function closePortals(){
   $("riderPortal").classList.remove("open");
@@ -1006,18 +1038,47 @@ const APP = {
     if(this.perfil.es_admin){
       $("adminPortal").classList.add("open");
       ADMIN.init();
+    } else if(!this.perfil.acepta_terminos){
+      this.pedirConsentimiento(session.user);
     } else {
       $("riderPortal").classList.add("open");
       RIDER.init(session.user);
     }
     return true;
+  },
+
+  pedirConsentimiento(user){
+    $("consentModal").style.display = "flex";
+    $("cmErr").style.display = "none"; $("cmAcepto").checked = false;
+    const btn = $("cmAceptar");
+    btn.onclick = async () => {
+      if(!$("cmAcepto").checked){
+        $("cmErr").textContent = "// Debes aceptar para poder ver tus fotos.";
+        $("cmErr").style.display = "block"; return;
+      }
+      btn.disabled = true; btn.textContent = "Entrando…";
+      const { error } = await SB.rpc("aceptar_terminos");
+      btn.disabled = false; btn.textContent = "Acepto y entrar";
+      if(error){ $("cmErr").textContent = "// " + error.message; $("cmErr").style.display = "block"; return; }
+      this.perfil.acepta_terminos = true;
+      $("consentModal").style.display = "none";
+      $("riderPortal").classList.add("open");
+      RIDER.init(user);
+    };
   }
 };
 
 /* ---------- ACCESO ---------- */
-$("showReg").addEventListener("click", () => { $("loginForm").style.display="none"; $("regForm").style.display="block"; });
-$("showLog").addEventListener("click", () => { $("regForm").style.display="none"; $("loginForm").style.display="block"; });
+/* Toggle corredor / equipo */
+$("accesoModo").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#accesoModo button").forEach(x => x.classList.toggle("on", x === b));
+  const admin = b.dataset.m === "admin";
+  $("loginForm").style.display = admin ? "block" : "none";
+  $("riderLoginForm").style.display = admin ? "none" : "block";
+});
 
+/* Login del EQUIPO (email + contraseña) */
 $("loginForm").addEventListener("submit", async ev => {
   ev.preventDefault();
   const err = $("err"); err.style.display = "none";
@@ -1027,22 +1088,52 @@ $("loginForm").addEventListener("submit", async ev => {
   APP.route();
 });
 
-$("regForm").addEventListener("submit", async ev => {
+/* Login del CORREDOR (número → evento → contraseña) */
+let RL_EVENTOS = [];
+function rlReset(){
+  RL_EVENTOS = [];
+  $("rlEventoWrap").style.display = "none";
+  $("rlPassWrap").style.display = "none";
+  $("rlSubmit").textContent = "Ver mis eventos";
+  $("rlErr").style.display = "none";
+}
+$("rlNum").addEventListener("input", rlReset);
+
+$("riderLoginForm").addEventListener("submit", async ev => {
   ev.preventDefault();
-  const err = $("regErr"); err.style.display = "none";
-  if(!$("rAcepto").checked){
-    err.textContent = "// Debes aceptar el aviso de privacidad y la autorización de uso de imagen.";
+  const err = $("rlErr"); err.style.display = "none"; err.style.color = "";
+  const num = parseInt($("rlNum").value, 10);
+  if(!Number.isInteger(num)){ err.textContent = "// Escribe tu número de competidor."; err.style.display = "block"; return; }
+
+  /* Etapa 2: ya cargamos eventos → iniciar sesión */
+  if(RL_EVENTOS.length){
+    const pid = $("rlEvento").value;
+    const pass = $("rlPass").value;
+    if(!pass){ err.textContent = "// Escribe tu contraseña."; err.style.display = "block"; return; }
+    const email = pid + "_" + num + DOM_SINT;
+    const { error } = await SB.auth.signInWithPassword({ email, password: pass });
+    if(error){ err.textContent = "// " + (error.message === "Invalid login credentials" ? "Contraseña incorrecta para ese número y evento." : error.message); err.style.display = "block"; return; }
+    $("rlPass").value = "";
+    APP.route();
+    return;
+  }
+
+  /* Etapa 1: buscar los eventos de ese número */
+  $("rlSubmit").textContent = "Buscando…"; $("rlSubmit").disabled = true;
+  const { data, error } = await SB.rpc("eventos_por_numero", { p_num: num });
+  $("rlSubmit").disabled = false;
+  if(error){ $("rlSubmit").textContent = "Ver mis eventos"; err.textContent = "// " + error.message; err.style.display = "block"; return; }
+  if(!data || !data.length){
+    $("rlSubmit").textContent = "Ver mis eventos";
+    err.textContent = "// No encontramos el número " + num + ". Pídele a tu fotógrafo que te dé de alta.";
     err.style.display = "block"; return;
   }
-  const { data, error } = await SB.auth.signUp({
-    email: $("rEmail").value.trim(),
-    password: $("rPass").value,
-    options: { data: { nombre: $("rNom").value.trim(), acepta_terminos: true } }
-  });
-  if(error){ err.textContent = "// " + error.message; err.style.display = "block"; return; }
-  if(data.session){ APP.route(); }
-  else { err.style.display = "block"; err.style.color = "var(--polvo)";
-    err.textContent = "// Cuenta creada. Revisa tu correo para confirmarla y luego inicia sesión."; }
+  RL_EVENTOS = data;
+  $("rlEvento").innerHTML = data.map(e => '<option value="' + e.proyecto_id + '">' + e.nombre + (e.fecha ? " · " + e.fecha : "") + '</option>').join("");
+  $("rlEventoWrap").style.display = "block";
+  $("rlPassWrap").style.display = "block";
+  $("rlSubmit").textContent = "Entrar";
+  $("rlPass").focus();
 });
 
 /* ---------- PORTAL DEL CORREDOR ---------- */
@@ -1058,9 +1149,13 @@ const RIDER = {
       $("rTags").innerHTML = '<span>Aún no estás asignado a un proyecto</span>';
       $("editStatus").textContent = "Tu fotógrafo te asignará a una sesión pronto";
       $("pgal").innerHTML = '<div class="mini" style="grid-column:1/-1;padding:30px;text-align:center">//// EN CUANTO SUBAMOS TUS FOTOS APARECERÁN AQUÍ</div>';
+      $("dlAll").style.display = "none";
       return;
     }
     const c = cs[0]; this.corredor = c;
+    /* botón "descargar todas mis fotos" (solo si el fotógrafo puso el link) */
+    const dl = $("dlAll");
+    if(c.descarga_url){ dl.href = c.descarga_url; dl.style.display = "block"; } else { dl.style.display = "none"; }
     /* aplicar SU color y diseño guardados */
     $("riderPortal").style.setProperty("--acc", c.color_galeria || "#C9A96B");
     document.querySelectorAll("#swatches .sw").forEach(s => s.classList.toggle("on", s.dataset.c === c.color_galeria));
@@ -1186,11 +1281,11 @@ const ADMIN = {
       const tr = document.createElement("tr");
       const opts = ESTATUS.map(s => '<option' + (s === c.estatus ? ' selected' : '') + '>' + s + '</option>').join("");
       tr.innerHTML = '<td class="n">#' + (c.numero ?? "—") + '</td>' +
-        '<td>' + c.nombre + '<div class="mini">' + (c.email || 'sin email') + (c.usuario_id ? ' · vinculado ✓' : ' · sin cuenta') + '</div></td>' +
+        '<td>' + c.nombre + '<div class="mini">' + (c.usuario_id ? 'con acceso ✓' : 'sin acceso aún') + (c.descarga_url ? ' · link ✓' : '') + '</div></td>' +
         '<td>' + (c.moto || '—') + '</td><td>' + (c.categoria || '—') + '</td>' +
         '<td><select aria-label="Estatus">' + opts + '</select></td>' +
         '<td><input type="number" min="0" max="100" value="' + (c.avance || 0) + '" style="width:70px;background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:8px"> %</td>' +
-        '<td style="white-space:nowrap"><button class="btn sm ghost" data-a="edit">✎ Editar</button> <button class="btn sm ghost" data-a="fotos">Fotos ↑</button> <button class="btn sm ghost" data-a="tele">Tele</button> <button class="btn sm ghost" data-a="del">✕</button></td>';
+        '<td style="white-space:nowrap"><button class="btn sm ghost" data-a="acceso">🔑 Acceso</button> <button class="btn sm ghost" data-a="edit">✎ Editar</button> <button class="btn sm ghost" data-a="fotos">Fotos ↑</button> <button class="btn sm ghost" data-a="tele">Tele</button> <button class="btn sm ghost" data-a="del">✕</button></td>';
       tr.querySelector("select").addEventListener("change", async e => {
         await SB.from("corredores").update({ estatus: e.target.value }).eq("id", c.id);
       });
@@ -1204,6 +1299,7 @@ const ADMIN = {
       });
       tr.querySelector('[data-a="tele"]').addEventListener("click", () => this.editTele(c, tr));
       tr.querySelector('[data-a="edit"]').addEventListener("click", () => this.editCorredor(c, tr));
+      tr.querySelector('[data-a="acceso"]').addEventListener("click", () => this.editAcceso(c, tr));
       tr.querySelector('[data-a="fotos"]').addEventListener("click", () => this.gotoUpload(c));
       tb.appendChild(tr);
     });
@@ -1216,7 +1312,7 @@ const ADMIN = {
     row.innerHTML = '<td colspan="7" style="background:var(--carbon2)"><div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end;padding:6px 0">' +
       '<div class="field" style="margin:0"><label>Nombre</label><input data-f="nombre" value="' + (c.nombre||'').replace(/"/g,'&quot;') + '"></div>' +
       '<div class="field" style="margin:0"><label>Nº</label><input data-f="numero" type="number" value="' + (c.numero ?? '') + '"></div>' +
-      '<div class="field" style="margin:0"><label>Email (para su acceso)</label><input data-f="email" type="email" value="' + (c.email||'') + '" placeholder="corredor@email.com"></div>' +
+      '<div class="field" style="margin:0"><label>Link de descarga</label><input data-f="descarga_url" type="url" value="' + (c.descarga_url||'').replace(/"/g,'&quot;') + '" placeholder="https://drive…"></div>' +
       '<div class="field" style="margin:0"><label>Moto / Auto</label><input data-f="moto" value="' + (c.moto||'').replace(/"/g,'&quot;') + '"></div>' +
       '<div class="field" style="margin:0"><label>Categoría</label><input data-f="categoria" value="' + (c.categoria||'').replace(/"/g,'&quot;') + '"></div>' +
       '<button class="btn solid sm" data-a="save" style="height:42px">Guardar</button></div></td>';
@@ -1230,6 +1326,35 @@ const ADMIN = {
       if(error){ alert("Error: " + error.message); return; }
       row.querySelector('[data-a="save"]').textContent = "Guardado ✓";
       setTimeout(() => { row.remove(); this.loadClients(); }, 600);
+    });
+  },
+
+  editAcceso(c, tr){
+    if(tr.nextSibling?.classList?.contains("acceso-edit")){ tr.nextSibling.remove(); return; }
+    const yaTiene = !!c.usuario_id;
+    const row = document.createElement("tr"); row.className = "acceso-edit";
+    row.innerHTML = '<td colspan="7" style="background:var(--carbon2)"><div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end;padding:6px 0">' +
+      '<div class="field" style="margin:0"><label>Contraseña para #' + (c.numero ?? '—') + ' · ' + (c.nombre || '') + '</label><input data-f="pass" type="text" autocomplete="off" placeholder="mín. 6 caracteres"></div>' +
+      '<button class="btn solid sm" data-a="save" style="height:42px">' + (yaTiene ? 'Resetear contraseña' : 'Crear acceso') + '</button>' +
+      '</div><div class="mini" data-r="msg">' + (yaTiene ? 'Ya tiene cuenta — al guardar cambias su contraseña.' : 'Se le crea su cuenta; entrará con su Nº ' + (c.numero ?? '—') + ' + esta contraseña.') + '</div></td>';
+    tr.after(row);
+    row.querySelector('[data-a="save"]').addEventListener("click", async () => {
+      const msg = row.querySelector('[data-r="msg"]'); msg.style.color = "";
+      const pass = row.querySelector('[data-f="pass"]').value;
+      if(c.numero == null){ msg.style.color = "#D97B7B"; msg.textContent = "Asígnale un número primero (botón ✎ Editar)."; return; }
+      if(pass.length < 6){ msg.style.color = "#D97B7B"; msg.textContent = "La contraseña debe tener al menos 6 caracteres."; return; }
+      const btn = row.querySelector('[data-a="save"]'); const prev = btn.textContent;
+      btn.disabled = true; btn.textContent = "Guardando…";
+      try {
+        const out = await provisionarCorredor(this.proyecto.id, c.numero, pass);
+        msg.style.color = "var(--polvo)";
+        msg.textContent = (out.action === "created" ? "✓ Acceso creado. " : "✓ Contraseña actualizada. ") + "Compártele: Nº " + c.numero + " + la contraseña que pusiste.";
+        btn.textContent = "Listo ✓";
+        setTimeout(() => { row.remove(); this.loadClients(); }, 2000);
+      } catch(e){
+        btn.disabled = false; btn.textContent = prev;
+        msg.style.color = "#D97B7B"; msg.textContent = "Error: " + e.message;
+      }
     });
   },
 
@@ -1299,15 +1424,26 @@ $("npAdd").addEventListener("click", async () => {
 });
 /* agregar corredor */
 $("acAdd").addEventListener("click", async () => {
+  const btn = $("acAdd");
   const nombre = $("acNombre").value.trim(); if(!nombre || !ADMIN.proyecto) return;
-  await SB.from("corredores").insert({
-    proyecto_id: ADMIN.proyecto.id, nombre,
-    numero: +$("acNum").value || null,
-    email: $("acEmail").value.trim(),
+  const numero = +$("acNum").value || null;
+  const pass = $("acPass").value;
+  if(pass && pass.length < 6){ alert("La contraseña debe tener al menos 6 caracteres (o déjala vacía)."); return; }
+  if(pass && numero == null){ alert("Para crear el acceso necesitas ponerle un número al corredor."); return; }
+  btn.disabled = true; const prev = btn.textContent; btn.textContent = "Agregando…";
+  const { error } = await SB.from("corredores").insert({
+    proyecto_id: ADMIN.proyecto.id, nombre, numero,
+    descarga_url: $("acDesc").value.trim(),
     moto: $("acMoto").value.trim(),
     categoria: $("acCat").value.trim()
   });
-  ["acNombre","acNum","acEmail","acMoto","acCat"].forEach(i => $(i).value = "");
+  if(error){ btn.disabled = false; btn.textContent = prev; alert("Error: " + error.message); return; }
+  if(pass){
+    try { await provisionarCorredor(ADMIN.proyecto.id, numero, pass); }
+    catch(e){ alert("Corredor agregado, pero no se pudo crear su acceso: " + e.message + "\nUsa el botón 🔑 Acceso para reintentar."); }
+  }
+  ["acNombre","acNum","acDesc","acPass","acMoto","acCat"].forEach(i => $(i).value = "");
+  btn.disabled = false; btn.textContent = prev;
   ADMIN.loadClients(); ADMIN.fillUpload();
 });
 
