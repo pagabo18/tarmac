@@ -820,6 +820,25 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
         <div class="mini" style="margin-top:16px">//// Marca ★ tus favoritas para edición extra o impresión · Descargas en calidad original</div>
       </div>
     </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="t">⚙️ Ajustes</span>
+        <span class="r" id="setMsg"></span>
+      </div>
+      <div class="panel-body">
+        <div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end;margin-bottom:20px">
+          <div class="field" style="margin:0"><label>Tu nombre</label><input id="setNombre" type="text" placeholder="Tu nombre"></div>
+          <div class="field" style="margin:0"><label>Tu correo (para avisos)</label><input id="setEmail" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com"></div>
+          <button class="btn solid" type="button" id="setGuardar" style="height:46px">Guardar mis datos</button>
+        </div>
+        <div class="chk" style="align-items:flex-start">
+          <input type="checkbox" id="setCompartir">
+          <label for="setCompartir">Permito que TARMAC use mis fotos y videos en su <b>página principal</b> y redes oficiales, con fines de portafolio y publicidad, conforme al <a href="#legal" onclick="closePortals()">aviso de privacidad</a>. Puedo revocarlo cuando quiera.</label>
+        </div>
+        <div class="mini" style="margin-top:10px">//// Tu nombre y correo son solo para contacto — sigues entrando con tu número.</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1150,9 +1169,17 @@ const RIDER = {
       $("editStatus").textContent = "Tu fotógrafo te asignará a una sesión pronto";
       $("pgal").innerHTML = '<div class="mini" style="grid-column:1/-1;padding:30px;text-align:center">//// EN CUANTO SUBAMOS TUS FOTOS APARECERÁN AQUÍ</div>';
       $("dlAll").style.display = "none";
+      $("setNombre").value = APP.perfil.nombre || "";
+      $("setEmail").value = "";
+      $("setCompartir").checked = !!APP.perfil.acepta_compartir;
       return;
     }
     const c = cs[0]; this.corredor = c;
+    /* Ajustes: precargar nombre, correo y consentimiento */
+    $("setNombre").value = c.nombre || "";
+    $("setEmail").value  = c.email || "";
+    $("setCompartir").checked = !!APP.perfil.acepta_compartir;
+    $("setMsg").textContent = "";
     /* botón "descargar todas mis fotos" (solo si el fotógrafo puso el link) */
     const dl = $("dlAll");
     if(c.descarga_url){ dl.href = c.descarga_url; dl.style.display = "block"; } else { dl.style.display = "none"; }
@@ -1228,6 +1255,33 @@ $("layoutSeg").addEventListener("click", async e => {
   b.classList.add("on");
   $("pgal").classList.toggle("film", b.dataset.l === "film");
   if(RIDER.corredor) await SB.from("corredores").update({ diseno_galeria: b.dataset.l }).eq("id", RIDER.corredor.id);
+});
+
+/* Ajustes del corredor: guardar nombre + correo */
+$("setGuardar").addEventListener("click", async () => {
+  const msg = $("setMsg"); msg.style.color = "";
+  const nombre = $("setNombre").value.trim();
+  const email  = $("setEmail").value.trim();
+  if(!nombre){ msg.style.color = "#D97B7B"; msg.textContent = "// Escribe tu nombre."; return; }
+  const btn = $("setGuardar"); btn.disabled = true; btn.textContent = "Guardando…";
+  const { error } = await SB.rpc("actualizar_datos_corredor", { p_nombre: nombre, p_email: email });
+  btn.disabled = false; btn.textContent = "Guardar mis datos";
+  if(error){ msg.style.color = "#D97B7B"; msg.textContent = "// " + error.message; return; }
+  msg.style.color = "var(--polvo)"; msg.textContent = "✓ Datos guardados";
+  if(APP.perfil) APP.perfil.nombre = nombre;
+  if(RIDER.corredor){ RIDER.corredor.nombre = nombre; RIDER.corredor.email = email; }
+  $("rNombre").innerHTML = nombre.replace(" ", "<br>");
+  $("riderWho").innerHTML = "Sesión iniciada — <b>" + nombre + "</b>";
+});
+
+/* Ajustes del corredor: consentimiento para compartir en la web */
+$("setCompartir").addEventListener("change", async e => {
+  const msg = $("setMsg"); msg.style.color = "";
+  const val = e.target.checked;
+  const { error } = await SB.rpc("actualizar_consentimiento_compartir", { p_acepta: val });
+  if(error){ e.target.checked = !val; msg.style.color = "#D97B7B"; msg.textContent = "// " + error.message; return; }
+  if(APP.perfil) APP.perfil.acepta_compartir = val;
+  msg.style.color = "var(--polvo)"; msg.textContent = val ? "✓ Gracias, autorizaste compartir tus fotos" : "✓ Preferencia guardada (no compartir)";
 });
 
 /* ---------- PANEL ADMIN ---------- */
