@@ -1277,7 +1277,7 @@ const RIDER = {
 
     /* Mis tiempos: precargar editor con flechitas */
     TELE.load(c, laps);
-    $("teMsg").textContent = "";
+    $("teleMsg").textContent = "";
 
     /* fotos con URLs firmadas */
     const { data: fotos } = await SB.from("fotos").select("*").eq("corredor_id", c.id).order("creado");
@@ -1457,7 +1457,7 @@ const TELE = {
 $("teAddLap").addEventListener("click", function(){ TELE.laps.push({min:0,seg:0,dec:0,pos:""}); TELE.render(); });
 $("teGuardar").addEventListener("click", async function(){
   if(!RIDER.corredor || RIDER.preview) return;
-  var msg = $("teMsg"); msg.style.color = "";
+  var msg = $("teleMsg"); msg.style.color = "";
   var d = TELE.datos();
   var btn = $("teGuardar"); btn.disabled = true; btn.textContent = "Guardando…";
   var res = await SB.rpc("actualizar_telemetria", {
