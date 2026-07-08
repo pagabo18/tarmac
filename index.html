@@ -1330,12 +1330,19 @@ const ADMIN = {
 
   async loadClients(){
     const { data: cs } = await SB.from("corredores").select("*").eq("proyecto_id", this.proyecto.id).order("numero");
+    /* quién autorizó compartir sus fotos en la web */
+    const ids = (cs || []).map(c => c.usuario_id).filter(Boolean);
+    const comparte = {};
+    if(ids.length){
+      const { data: pfs } = await SB.from("perfiles").select("id, acepta_compartir").in("id", ids);
+      (pfs || []).forEach(p => { comparte[p.id] = p.acepta_compartir; });
+    }
     const tb = $("clientRows"); tb.innerHTML = "";
     (cs || []).forEach(c => {
       const tr = document.createElement("tr");
       const opts = ESTATUS.map(s => '<option' + (s === c.estatus ? ' selected' : '') + '>' + s + '</option>').join("");
       tr.innerHTML = '<td class="n">#' + (c.numero ?? "—") + '</td>' +
-        '<td>' + c.nombre + '<div class="mini">' + (c.usuario_id ? 'con acceso ✓' : 'sin acceso aún') + (c.descarga_url ? ' · link ✓' : '') + '</div></td>' +
+        '<td>' + c.nombre + '<div class="mini">' + (c.usuario_id ? 'con acceso ✓' : 'sin acceso aún') + (c.descarga_url ? ' · link ✓' : '') + ((c.usuario_id && comparte[c.usuario_id]) ? ' · <span style="color:#C9A96B">🌐 comparte</span>' : '') + '</div></td>' +
         '<td>' + (c.moto || '—') + '</td><td>' + (c.categoria || '—') + '</td>' +
         '<td><select aria-label="Estatus">' + opts + '</select></td>' +
         '<td><input type="number" min="0" max="100" value="' + (c.avance || 0) + '" style="width:70px;background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:8px"> %</td>' +
