@@ -1320,6 +1320,11 @@ const RIDER = {
 function abrirFoto(url){ $("lightboxImg").src = url; $("lightbox").style.display = "flex"; }
 $("lightbox").addEventListener("click", () => { $("lightbox").style.display = "none"; $("lightboxImg").src = ""; });
 
+/* registrar cuando el corredor abre su link de descarga */
+$("dlAll").addEventListener("click", () => {
+  if(RIDER.corredor && !RIDER.preview) SB.rpc("registrar_descarga", { p_corredor_id: RIDER.corredor.id });
+});
+
 /* color y diseño → se guardan en la base de datos */
 $("swatches").addEventListener("click", async e => {
   const b = e.target.closest(".sw"); if(!b) return;
@@ -1517,25 +1522,9 @@ const ADMIN = {
   },
 
   async loadClients(){
-    const { data: cs } = await SB.from("corredores").select("*").eq("proyecto_id", this.proyecto.id).order("numero");
-    this._cs = cs || [];
-    /* quién autorizó compartir sus fotos en la web */
-    const ids = this._cs.map(c => c.usuario_id).filter(Boolean);
-    this._comparte = {};
-    if(ids.length){
-      const { data: pfs } = await SB.from("perfiles").select("id, acepta_compartir").in("id", ids);
-      (pfs || []).forEach(p => { this._comparte[p.id] = p.acepta_compartir; });
-    }
-    /* conteo de fotos y videos por corredor */
-    this._fc = {};
-    const cids = this._cs.map(c => c.id);
-    if(cids.length){
-      const { data: fs } = await SB.from("fotos").select("corredor_id, es_video").in("corredor_id", cids);
-      (fs || []).forEach(f => {
-        const o = this._fc[f.corredor_id] || (this._fc[f.corredor_id] = { img:0, vid:0 });
-        if(f.es_video) o.vid++; else o.img++;
-      });
-    }
+    const { data, error } = await SB.rpc("estado_corredores", { p_proyecto_id: this.proyecto.id });
+    if(error){ console.warn("estado_corredores:", error.message); }
+    this._cs = error ? [] : (data || []);
     /* poblar el filtro una sola vez */
     const fsel = $("filtroEstatus");
     if(fsel && !fsel.options.length){
@@ -1552,14 +1541,22 @@ const ADMIN = {
     list.forEach(c => {
       const tr = document.createElement("tr");
       const opts = ESTATUS.map(s => '<option' + (s === c.estatus ? ' selected' : '') + '>' + s + '</option>').join("");
-      const fc = this._fc[c.id] || { img:0, vid:0 };
-      const mini = (c.moto ? c.moto + ' · ' : '') + (c.categoria ? 'Cat. ' + c.categoria + ' · ' : '') +
-        (c.usuario_id ? 'con acceso ✓' : 'sin acceso aún') + (c.descarga_url ? ' · link ✓' : '') +
-        ((c.usuario_id && this._comparte[c.usuario_id]) ? ' · <span style="color:#C9A96B">🌐 comparte</span>' : '');
+      const nf = c.fotos_subidas || 0;
+      const fdate = function(t){ return t ? new Date(t).toLocaleDateString("es-MX",{day:"numeric",month:"short"}) : ""; };
+      const linea1 = [ (c.moto||""), (c.categoria ? "Cat. "+c.categoria : ""), (c.descarga_url ? "link ✓" : "") ].filter(Boolean).join(" · ");
+      var linea2;
+      if(c.usuario_id){
+        linea2 = [ "✉ " + (c.email || "sin correo"),
+                   (c.ultimo_acceso ? "entró " + fdate(c.ultimo_acceso) : "aún no entra"),
+                   (c.descarga_veces ? "⬇ descargó " + c.descarga_veces + "×" : "sin descargar"),
+                   (c.acepta_compartir ? "🌐 comparte" : "") ].filter(Boolean).join(" · ");
+      } else { linea2 = "sin acceso aún"; }
       tr.innerHTML = '<td class="n">#' + (c.numero ?? "—") + '</td>' +
-        '<td>' + c.nombre + '<div class="mini">' + mini + '</div></td>' +
-        '<td' + (fc.img ? ' style="color:#8FBF9F;font-family:var(--mono)"' : '') + '>' + (fc.img || '—') + '</td>' +
-        '<td>' + (fc.vid || '—') + '</td>' +
+        '<td>' + c.nombre +
+          (linea1 ? '<div class="mini">' + linea1 + '</div>' : '') +
+          '<div class="mini" style="color:' + (c.usuario_id ? 'var(--polvo)' : 'var(--gris)') + '">' + linea2 + '</div></td>' +
+        '<td' + (nf ? ' style="color:#8FBF9F;font-family:var(--mono)"' : '') + '>' + (nf || '—') + '</td>' +
+        '<td>—</td>' +
         '<td><select aria-label="Estatus">' + opts + '</select></td>' +
         '<td><input type="number" min="0" max="100" value="' + (c.avance || 0) + '" style="width:64px;background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:8px"> %</td>' +
         '<td style="white-space:nowrap"><button class="btn sm solid" data-a="ver">👁 Ver portal</button> <button class="btn sm ghost" data-a="acceso">🔑 Acceso</button> <button class="btn sm ghost" data-a="edit">✎ Editar</button> <button class="btn sm ghost" data-a="fotos">Fotos ↑</button> <button class="btn sm ghost" data-a="tele">Tele</button> <button class="btn sm ghost" data-a="del">✕</button></td>';
