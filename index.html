@@ -1275,11 +1275,17 @@ const RIDER = {
       '</td><td class="pos">' + (l.posicion || '') + '</td></tr>').join("") ||
       '<tr><td colspan="4" class="mini" style="padding:18px">//// Los tiempos de tu carrera aparecerán aquí</td></tr>';
 
-    /* Mis tiempos: precargar editor con flechitas */
-    TELE.load(c, laps);
-    $("teleMsg").textContent = "";
+    /* Mis tiempos y fotos: secciones independientes. Cada una va aislada en su
+       propio try para que el error de una no tumbe a la otra ni al resto del portal. */
+    try { TELE.load(c, laps); $("teleMsg").textContent = ""; }
+    catch(e){ console.error("telemetria portal:", e); }
 
-    /* fotos con URLs firmadas */
+    try { await this.pintarFotos(c); }
+    catch(e){ console.error("fotos portal:", e); }
+  },
+
+  /* Galería del corredor con URLs firmadas (bucket privado). */
+  async pintarFotos(c){
     const { data: fotos } = await SB.from("fotos").select("*").eq("corredor_id", c.id).order("creado");
     $("editStatus").textContent = (c.estatus || "") + " — " + (c.avance || 0) + "% · " + (fotos?.length || 0) + " archivos";
     const g = $("pgal"); g.innerHTML = "";
