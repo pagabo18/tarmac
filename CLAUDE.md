@@ -1,6 +1,6 @@
 # CLAUDE.md — Proyecto TARMAC
 
-Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: 2026-07-08 (Ajustes del corredor + login por correo + consentimiento para compartir).
+Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: **2026-07-08** (portal ampliado: Ajustes, login por número/correo, telemetría editable, estado admin, consentimiento blindado, contacto por Instagram).
 
 ## Qué es Tarmac
 
@@ -8,94 +8,111 @@ Negocio de fotografía y video de motorsport de Gabriel Hernández (usuario: pag
 
 ## URLs y ubicaciones
 
-- Sitio en producción: https://pagabo18.github.io/tarmac/ (GitHub Pages, rama `main`)
+- Sitio en producción: **https://tarmac.mx** (dominio propio vía `CNAME`) y https://pagabo18.github.io/tarmac/ — ambos sirven la rama `main` por GitHub Pages.
 - Repositorio: https://github.com/pagabo18/tarmac (público)
-- Archivo principal: `index.html` — TODO el sitio vive en un solo archivo autocontenido (~317 KB): HTML + CSS + JS + 2 fotos en base64
+- Archivo principal: `index.html` — TODO el sitio vive en un solo archivo autocontenido (~1.07 MB): HTML + CSS + JS + fotos en base64.
+- `sql/` — copias de registro de cada migración/función aplicada a Supabase (la versión ejecutada va por el conector MCP; estos archivos son la referencia en git).
+- `docs/superpowers/` — spec y plan de la 1ª feature (Ajustes + compartir).
 - Supabase project ref: `hhjkhaogrzjzdqdpracm` (org: "tarmac", región us-west-2)
 - Supabase URL: https://hhjkhaogrzjzdqdpracm.supabase.co
-- Clave pública usada en el sitio (publishable, NO es secreta): `sb_publishable_yOtSabdEwOy6RY2gH6wKIg_M6i-HHNc`
+- Clave pública (publishable, NO secreta): `sb_publishable_yOtSabdEwOy6RY2gH6wKIg_M6i-HHNc`
 - La clave `service_role` NUNCA se comparte ni se pone en el frontend.
+
+> ⚠️ **Dos carpetas — cuidado.** El repo git real y fuente de verdad es `C:\Users\pagab\Documents\tarmac-app`. Existe una copia **vieja** en `C:\Users\pagab\Documents\IA\tarmac` (con un CLAUDE.md previo y los txt/zips de links) que **confunde** — NO abrir ni editar su `index.html`.
 
 ## Cómo publicar cambios
 
-1. Editar/regenerar `index.html`
-2. Subirlo al repo (commit a `main`) — vía token de GitHub con scope `repo` (pedirlo a Gabriel, temporal) o manualmente por la web de GitHub ("Add file → Upload files")
-3. GitHub Pages republica solo en ~1 minuto. Si se ve la versión vieja: recargar con Ctrl+Shift+R
-4. Verificar la versión publicada por API (el raw cachea ~5 min):
-   `GET https://api.github.com/repos/pagabo18/tarmac/contents/index.html` con `Accept: application/vnd.github.raw`
+1. Editar `index.html` (o el SQL) en `tarmac-app`.
+2. `git commit` + `git push origin main`. GitHub Pages republica en ~1 minuto (Ctrl+Shift+R si se ve viejo).
+3. Verificar el commit publicado: `GET https://api.github.com/repos/pagabo18/tarmac/commits/main`.
+4. **Probar antes de publicar (recomendado):** servir el `index.html` en un servidor local (ej. `python -m http.server 8000` o un pequeño server de node) y abrir `http://localhost:8000/`. Funciona contra el backend REAL de Supabase (prod), así que las pruebas son fieles sin exponer el frontend nuevo al público. Añadir cabecera `Cache-Control: no-store` evita recargar con Ctrl+Shift+R.
+5. Validar la sintaxis del JS antes de subir (el sitio es un solo archivo; un error rompe todo): extraer los `<script>` internos y correrlos por `new vm.Script(...)` en node.
 
-Nota de entorno Claude: el sandbox de código solo puede acceder a dominios permitidos. `github.com` y `api.github.com` están permitidos por defecto; `api.vercel.com`, `*.supabase.co` y `pagabo18.github.io` NO (salvo que Gabriel los agregue en Settings → Capabilities → Dominios permitidos adicionales; los cambios solo aplican a chats nuevos). Para tocar la base de datos usar el **conector MCP de Supabase** (activarlo en el menú de herramientas del chat), que funciona del lado del servidor y no depende del sandbox.
+**Base de datos:** usar el **conector MCP de Supabase** (`apply_migration` para DDL/funciones, `execute_sql` para datos/consultas). Va directo a producción; solo cambios aditivos/no destructivos. `auth.uid()` es null vía MCP, así que las RPCs con `SECURITY DEFINER` que checan sesión/`soy_admin()` no se pueden probar por MCP — se prueban en el navegador.
 
-## Diseño (v actual)
+Nota de entorno Claude: el sandbox de código solo alcanza `github.com`/`api.github.com`. NO alcanza `*.supabase.co`, SmugMug, Drive ni `tarmac.mx`. Por eso: la BD se toca por MCP, y descargar/subir fotos a Supabase lo hace Gabriel desde el navegador (o se prepara localmente y se sube por el panel).
 
-- Paleta elegante: tinta `#0C0F14`, carbón `#131720`/`#1A2029`, acento champaña `#C9A96B`, marfil `#F2EFE7`, gris pizarra `#8B93A0`. (Antes era naranja/negro; Gabriel pidió cambiarla — NO volver al naranja.)
-- Tipografía: Archivo variable (itálica extendida ~118-125% para display, estilo dorsal de carrera) + JetBrains Mono para etiquetas técnicas.
-- Referencia de experiencia: labs.noomoagency.com — preloader con % y elección de sonido, mucho movimiento.
-- Elementos clave: preloader ("Iniciar con sonido / Sin sonido"), motor de audio procedural (Web Audio, revoluciona con la velocidad de scroll), cursor personalizado con anillo, botones magnéticos, tilt 3D en tarjetas, hero slideshow con crossfade, carrusel "Selección del mes" con swipe, texto cinético que se mueve con el scroll, doble marquee, sección showreel 16:9 + 4 slots de reels 9:16, esquinas HUD estilo "////".
-- Se quitaron las partículas 3D (three.js) a petición de Gabriel.
-- El showreel no tiene video aún: en el JS hay una constante `SRC = ""` — al poner ahí la URL de un MP4 se reproduce inline.
-- Respetar `prefers-reduced-motion` (ya implementado).
+## Diseño
 
-## Arquitectura de datos (Supabase, esquema public)
+- Paleta elegante: tinta `#0C0F14`, carbón `#131720`/`#1A2029`, acento champaña `#C9A96B`, marfil `#F2EFE7`, gris pizarra `#8B93A0`. (Antes naranja/negro; Gabriel pidió cambiarla — NO volver al naranja.)
+- Tipografía: Archivo variable (itálica extendida, estilo dorsal) + JetBrains Mono para etiquetas técnicas.
+- Vars CSS clave (usadas al editar): `--acc` (acento del portal), `--carbon`/`--carbon2`, `--linea`, `--hueso`, `--polvo`, `--gris`.
+- Elementos: preloader con sonido, audio procedural, cursor con anillo, botones magnéticos, tilt 3D, hero slideshow, carrusel, texto cinético, showreel + reels, esquinas HUD "////". `SRC=""` en el JS = URL del video del showreel. Respeta `prefers-reduced-motion`.
 
-Tablas (todas con RLS activado):
-- `perfiles` (id = auth.users.id, nombre, es_admin) — se crea sola al registrarse vía trigger `crear_perfil`
-- `admins_autorizados` (email) — emails que reciben es_admin automáticamente al registrarse. Actuales: pagabo18@hotmail.com, brianrso@hotmail.com
-- `proyectos` (nombre, disciplina, fecha, ubicacion, estatus)
-- `corredores` (proyecto_id, usuario_id, numero, nombre, email, **descarga_url**, moto, categoria, color_galeria, diseno_galeria, estatus, avance, posicion, mejor_vuelta, tiempo_total, velocidad_max) — `descarga_url` = link externo (Drive/WeTransfer) para el botón "Descargar todas mis fotos" del portal
-- `perfiles` incluye además `acepta_terminos` (bool) y `acepta_fecha` — consentimiento de uso de imagen; y `acepta_compartir` (bool, default false) + `acepta_compartir_fecha` — consentimiento para usar sus fotos/videos en la página pública (curaduría manual del admin)
-- `vueltas` (corredor_id, numero, tiempo, diferencia, posicion)
-- `fotos` (corredor_id, ruta, frame, es_video, favorita)
+## Arquitectura de datos (Supabase, esquema public — todas con RLS)
 
-Storage: bucket privado `fotos`. Rutas: `{corredor_id}/{timestamp}-{nombre_archivo}`. El corredor ve sus fotos con URLs firmadas de 1 hora.
+- `perfiles` (id = auth.users.id, nombre, es_admin) — se crea sola vía trigger `crear_perfil`. Consentimientos: `acepta_terminos`/`acepta_fecha` (uso de imagen, 1er login) y `acepta_compartir`/`acepta_compartir_fecha`/`revoca_compartir_fecha` (usar sus fotos en la web).
+- `admins_autorizados` (email) — reciben es_admin al registrarse. Actuales: pagabo18@hotmail.com, brianrso@hotmail.com.
+- `proyectos` (nombre, disciplina, fecha, ubicacion, estatus).
+- `corredores` (proyecto_id, usuario_id, numero, nombre, email, **descarga_url**, moto, categoria, color_galeria, diseno_galeria, estatus, avance, posicion, mejor_vuelta, tiempo_total, velocidad_max, **fotos_totales**, **descarga_ultima**, **descarga_veces**).
+  - `descarga_url` = link archive de SmugMug (botón "Descargar todas mis fotos").
+  - `fotos_totales` = cuántos archivos hay en ese link (se muestra en el portal para que el corredor sepa cuándo se actualiza).
+  - `descarga_ultima`/`descarga_veces` = seguimiento de clics en el botón de descarga.
+- `vueltas` (corredor_id, numero, tiempo, diferencia, posicion).
+- `fotos` (corredor_id, ruta, frame, es_video, favorita). Storage: bucket privado `fotos`, rutas `{corredor_id}/{timestamp}-{archivo}`, URLs firmadas 1h.
 
-Estatus posibles: Sin editar, En edición, Revisión, Entregado.
+**Estatus y avance automático** (`ESTATUS` + `AVANCE_ESTATUS` en el JS): al cambiar el estatus en el panel, el avance salta solo. Sin contenido→0 · Sin editar→10 · **Seleccionando→25** · En edición→40 · Revisión→70 · Entregado→100.
 
-Seguridad (RLS): los admins (perfiles.es_admin, vía función `soy_admin()`) tienen todo; cada corredor solo SELECT de sus filas (proyecto, corredor, vueltas, fotos) y UPDATE de su color/diseño/favoritas. Bucket: admin todo, corredor solo lectura de sus archivos.
+Seguridad (RLS): admins (`soy_admin()`) todo; cada corredor solo SELECT de sus filas y UPDATE de color/diseño/favoritas. Todo lo demás que edita el corredor pasa por RPCs `SECURITY DEFINER` que actúan sobre `auth.uid()`.
 
-## Acceso por número (modelo actual — 2026-07-07)
+## Acceso de corredores (login por número **o** correo)
 
-El login del corredor **ya NO es por email**. El corredor entra con su **número de competidor + evento + contraseña**; el equipo (Gabriel/Brian) entra con email+contraseña (toggle "Soy corredor / Equipo TARMAC" en la sección Acceso). No hay auto-registro público.
+El corredor entra con su **número _o_ su correo registrado** + evento + contraseña, en un solo campo (si el texto tiene `@` → busca por correo). El equipo entra con email+contraseña (toggle "Soy corredor / Equipo TARMAC"). No hay auto-registro.
 
-Mecánica (todo detrás de un **email sintético** invisible para el corredor):
-- Email sintético = `{proyecto_id}_{numero}@tarmac.mx`. Trigger `vincular_por_email_sintetico` (en auth.users) parsea ese email y pone `usuario_id` en la(s) fila(s) de corredor con ese proyecto+número.
-- Login corredor (frontend, sin sesión): `SB.rpc('eventos_por_numero', {p_num})` → devuelve los eventos de ese número (deduplicados) → el corredor elige evento → `signInWithPassword({ email: pid+'_'+num+'@tarmac.mx', password })`. La RPC es SECURITY DEFINER y `anon` puede ejecutarla.
-- **Contraseñas gestionadas por el admin** vía Edge Function **`provisionar_corredor`** (usa `service_role`, que Supabase inyecta; NUNCA en el frontend). Verifica que el llamador es admin, crea/actualiza la cuenta con `email_confirm:true` y vincula `usuario_id`. El panel admin la llama con el JWT del admin (botón "🔑 Acceso" por corredor y campo "Contraseña" en alta). Como usa `email_confirm:true`, NO hace falta desactivar "Confirm email" en Supabase.
-- Consentimiento de uso de imagen: como se quitó el registro con checkbox, se pide en el **primer login del corredor** (modal `consentModal`) si `perfiles.acepta_terminos` es falso; el botón llama a la RPC `aceptar_terminos()` (SECURITY DEFINER, solo `authenticated`, actualiza su propia fila).
+- Todo detrás de un **email sintético** invisible: `{proyecto_id}_{numero}@tarmac.mx`. Trigger `vincular_por_email_sintetico` vincula `usuario_id` por proyecto+número.
+- Login por número: RPC `eventos_por_numero(p_num)`. Login por correo: RPC `eventos_por_correo(p_email)` (devuelve proyecto_id+numero+nombre+fecha; ignora correos vacíos; insensible a may/min). Ambas SECURITY DEFINER, ejecutables por `anon`. Luego el corredor elige evento y hace `signInWithPassword` con el email sintético.
+- **Contraseñas gestionadas por el admin** vía Edge Function **`provisionar_corredor`** (service_role server-side, `email_confirm:true`). Botón "🔑 Acceso" por corredor + botón **"Dar acceso a todos (con link)"** (loop con contraseña `Atemajac2026#<número>`).
+- Consentimiento de uso de imagen: modal `consentModal` en el 1er login si `acepta_terminos` es falso → RPC `aceptar_terminos()`.
 
-Migraciones/funciones relevantes: `login_numero_descarga`, `eventos_por_numero_distinct`, `aceptar_terminos_rpc`; Edge Function `provisionar_corredor`.
+## RPCs y Edge Functions (todas en prod)
 
-**Ajustes del corredor + login por correo + compartir (2026-07-08, EN PROD):** El portal tiene una sección **⚙️ Ajustes** donde el corredor ve su número (solo lectura), edita su **nombre** y **correo**, y activa/desactiva el consentimiento de **compartir en la web**. RPCs `SECURITY DEFINER` (solo `authenticated`, actúan sobre `auth.uid()`): `actualizar_datos_corredor(p_nombre,p_email)` (actualiza todas sus fichas + `perfiles.nombre`) y `actualizar_consentimiento_compartir(p_acepta)`. El **login del corredor acepta número _o_ correo** en un solo campo: si tiene `@` usa la RPC `eventos_por_correo(p_email)` (SECURITY DEFINER, `anon`; ignora correos vacíos, insensible a may/min; devuelve proyecto_id+numero+nombre+fecha), si no, `eventos_por_numero`; luego evento → contraseña (mismo email sintético). El **panel admin** muestra la etiqueta "🌐 comparte" en los corredores que autorizaron. Archivos SQL de registro: `sql/ajustes_compartir.sql`, `sql/login_por_correo.sql`.
+- Edge Function `provisionar_corredor` (ACTIVE, verify_jwt) — crea/resetea acceso (admin).
+- `eventos_por_numero(int)` / `eventos_por_correo(text)` — login sin sesión (anon).
+- `aceptar_terminos()` — consentimiento de imagen (authenticated).
+- `actualizar_datos_corredor(nombre, email)` — el corredor edita su nombre/correo (todas sus fichas + perfiles.nombre).
+- `actualizar_consentimiento_compartir(p_acepta)` — el corredor **SOLO puede aceptar** (rechaza `false`; para retirar debe escribir por Instagram).
+- `admin_set_compartir(usuario_id, valor)` — solo el admin retira/reactiva el permiso de compartir (botón "(quitar)").
+- `actualizar_telemetria(corredor_id, posicion, mejor_vuelta, tiempo_total, velocidad_max, vueltas jsonb)` — el corredor edita SU telemetría y vueltas (verifica `usuario_id=auth.uid()`, reemplaza vueltas).
+- `registrar_descarga(corredor_id)` — cuenta los clics del corredor en el botón de descarga.
+- `estado_corredores(proyecto_id)` — solo admin (`soy_admin()`); estado consolidado por corredor incl. última sesión real de `auth.users.last_sign_in_at`, fotos subidas, comparte, etc.
 
-⚠️ IMPORTANTE (lección de esta feature): el trabajo de frontend de la sesión del 2026-07-07 se **perdió** porque nunca se commiteó a git ni se guardó en disco (solo sobrevivieron las migraciones, que van server-side). **Commitear `index.html` a git en cuanto un cambio quede estable.**
-
-## Estado actual (2026-07-03)
-
-- Proyecto cargado: **Enduro 2026 Atemajac** (2026-06-28, Atemajac, JAL) con 26 corredores: 22 "En edición" (avance 25%), 4 "Sin editar" (números 32, 572, 811, 816).
-- Detalles a resolver: #28 está duplicado (Jossue Larios / José Luis Larios — confirmar si es la misma persona); "@pepopartp" #532 y "Señor amigo de Tato" #730 necesitan nombre real; Paco GRV corre #212 pero con camisa 512 (no confundir con Capi Saeb #512); equipo Giovanni Navarro: Karol #811, Toto #433, Uriel #138, Efrén #235.
-- Admins: Gabriel (pagabo18@hotmail.com, activo, confirmado) y Brian (brianrso@hotmail.com, pre-autorizado, pendiente de registrarse).
-- **Pendiente inmediato: mañana suben el primer ZIP de fotos de Atemajac** desde el panel admin (pestaña "Subir fotos" → elegir proyecto y corredor → soltar ZIP; se descomprime en el navegador con JSZip y sube cada archivo en calidad original, sin recompresión).
+Archivos SQL de registro en `sql/`: `ajustes_compartir.sql`, `login_por_correo.sql`, `actualizar_telemetria.sql`, `fotos_totales.sql`, `estado_corredores.sql`, `compartir_solo_aceptar.sql`.
 
 ## Funcionalidad del sitio
 
-- Público: hero slideshow, disciplinas, tira de contactos, showreel, carrusel, sección de acceso, servicios, contacto.
-- Login real (supabase-js v2 por CDN jsdelivr; JSZip por cdnjs). Corredor: número → evento → contraseña; equipo: email → contraseña (ver "Acceso por número" arriba). Al iniciar sesión, enruta por `perfiles.es_admin`: admin → panel admin, corredor → su portal. Sesión persistente (auto-abre el portal al recargar).
-- Portal corredor: número dorsal gigante, tags (moto, categoría, proyecto), telemetría (posición, mejor vuelta, tiempo total, vel. máx), tabla de vueltas (mejor vuelta resaltada ★), **botón "Descargar todas mis fotos"** (si hay `descarga_url`), galería con favoritas ★ (persisten), descarga en original, y personalización de color (5 swatches) y diseño (mosaico/rollo) que SE GUARDAN en su fila. En el primer login pide consentimiento de uso de imagen (modal).
-- Panel admin: crear proyectos; por proyecto: lista de corredores con estatus de acceso ("con acceso ✓ / sin acceso"), estatus (select), avance (%), botón **"🔑 Acceso"** (crea/resetea contraseña vía Edge Function), "Tele" (telemetría + vueltas "tiempo, diferencia, posición" una por línea), "✎ Editar" (incluye `descarga_url`), eliminar; agregar corredor (nombre, nº, moto, categoría, link de descarga, contraseña opcional); subir archivos sueltos o ZIP con progreso.
+**Portal del corredor:**
+- Número dorsal gigante con **foto de portada propia** (una de sus fotos), tags, telemetría, tabla de vueltas.
+- Galería: **click en foto → lightbox** (foto ampliada al centro), favoritas ★, descarga individual. Nota de "muestra" (si tiene 4+ fotos, avisa que la galería completa está en el link) y "seguimos subiendo más".
+- **Botón "⬇ Descargar TODAS mis fotos (N)"** (N = `fotos_totales`); registra la descarga.
+- **⚙️ Ajustes**: ve su número (solo lectura), edita **nombre** y **correo**, e interruptor de **compartir** (solo se puede ACEPTAR, con confirmación; para retirar debe escribir por Instagram — lo quita el admin).
+- **🏁 Mis tiempos**: editor con inputs tipo flechitas (min:seg.déc) para cada vuelta, posición **manual** (input numérico, hay ~1000 corredores), botón agregar/quitar vuelta. **Mejor vuelta, tiempo total y diferencias se calculan solos** (módulo JS `TELE`). Posición opcional. Guarda vía `actualizar_telemetria`.
+
+**Panel admin:** crear proyectos; por proyecto una lista de corredores con: **conteo de fotos**, **filtro por estatus**, estatus (select, mueve el avance solo), avance (%), y por corredor bajo el nombre un **estado**: correo, si ya entró (última sesión), cuántas veces descargó, y 🌐 comparte con enlace **"(quitar)"**. Botones por fila: **"👁 Ver portal"** (vista previa del portal del corredor sin loguearse — oculta Ajustes y Mis tiempos), "🔑 Acceso", "✎ Editar" (incl. `descarga_url` y `fotos_totales`), "Fotos ↑", "Tele", "✕". Arriba: filtro + **"🔑 Dar acceso a todos (con link)"**. Subir fotos: sueltas o ZIP (JSZip, original sin recompresión).
+
+**Contacto:** el correo se reemplazó por Instagram **@tarmac_official_** (botón de contacto + avisos legales).
+
+## Estado actual (2026-07-08)
+
+- Proyecto: **Enduro 2026 Atemajac** (2026-06-28) con **25 corredores** (el #28 duplicado se resolvió; #532 y #730 tienen su número como nombre para que ellos lo pongan).
+- **20 corredores** con `descarga_url` (link SmugMug), **acceso** creado (contraseña `Atemajac2026#<número>`) y **fotos de muestra** (2-4 c/u, reescaladas ~1600px). El #28 fue el de pruebas.
+- **5 sin link/fotos**: #32, #417, #572, #811, #816 → pendientes de conseguir su link.
+- Mensajes de Instagram (para los con y sin fotos) generados; copia en `C:\Users\pagab\Documents\IA\mensajes_instagram_atemajac.txt`.
+- Admins: Gabriel (pagabo18@hotmail.com) y Brian (brianrso@hotmail.com).
 
 ## Convenciones y preferencias del cliente
 
 - Todo en español (UI y comunicación).
-- Gabriel no es programador: darle pasos concretos, hacer el trabajo técnico por él cuando sea posible.
-- Estética: elegante, motorsport premium, mucho movimiento y sonido; NO naranja/negro.
-- Tokens: siempre pedirlos temporales y recordarle revocarlos al terminar.
+- Gabriel no es programador: darle pasos concretos, hacer el trabajo técnico por él.
+- Estética elegante, motorsport premium; NO naranja/negro.
+- **Commitear `index.html` a git en cuanto un cambio quede estable** (lección 2026-07-07: se perdió trabajo de frontend por no commitear; solo sobrevivió lo server-side).
+- Formato de respuestas: 👉 acción del usuario · 🧠 razonamiento.
 
 ## Roadmap sugerido (no iniciado)
 
-1. Miniaturas automáticas (las galerías cargarán lento con cientos de fotos originales)
-2. Dominio propio (p. ej. tarmac.mx) — GitHub Pages o migrar a Vercel (repo ya listo para importar en vercel.com/new)
-3. Marca de agua en previews antes de "Entregado"
-4. Video de showreel real (llenar `SRC`)
-5. Notificación al corredor cuando su sesión pase a "Entregado"
-6. Selector de proyecto en el portal del corredor si participa en varios
-7. Vigilar límites del plan gratuito de Supabase (1 GB storage) — al crecer, migrar originales a Cloudflare R2 (~$0.015/GB/mes, egreso gratis) manteniendo Supabase para auth y datos
+1. Miniaturas automáticas (galerías lentas con cientos de originales).
+2. Marca de agua en previews antes de "Entregado".
+3. Video de showreel real (llenar `SRC`).
+4. Notificación al corredor cuando su sesión pase a "Entregado".
+5. Selector de proyecto en el portal si el corredor participa en varios.
+6. Vigilar el límite de 1 GB de Supabase (plan gratis) — al crecer, mover originales a Cloudflare R2 manteniendo Supabase para auth/datos.
+7. Botón "Ver mi galería" embebiendo SmugMug (patrón `umistudio.smugmug.com/ASINCRONO/ATEMAJAC/<número>`).
