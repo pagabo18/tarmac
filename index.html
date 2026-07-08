@@ -794,6 +794,28 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
       </div>
     </div>
 
+    <div class="panel" id="teleEditPanel">
+      <div class="panel-head">
+        <span class="t">🏁 Mis tiempos</span>
+        <span class="r" id="teleMsg"></span>
+      </div>
+      <div class="panel-body">
+        <div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin-bottom:18px">
+          <div class="field" style="margin:0"><label>Posición general (opcional)</label><input id="teP" type="number" min="0" max="9999" inputmode="numeric" placeholder="Ej. 3" style="width:100%;background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:11px"></div>
+          <div class="field" style="margin:0"><label>Velocidad máx — km/h (opcional)</label><input id="teV" type="number" min="0" max="400" inputmode="numeric" placeholder="87" style="width:100%;background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:11px"></div>
+        </div>
+        <div style="display:flex;gap:28px;flex-wrap:wrap;margin-bottom:18px">
+          <div><div class="custom-l">Mejor vuelta (auto)</div><div id="teBest" style="font-family:var(--mono);font-size:19px;color:var(--acc)">—</div></div>
+          <div><div class="custom-l">Tiempo total (auto)</div><div id="teTotal" style="font-family:var(--mono);font-size:19px;color:var(--acc)">—</div></div>
+        </div>
+        <div class="custom-l" style="margin-bottom:10px">Tus vueltas — ajusta el tiempo con las flechitas (minutos : segundos . décimas)</div>
+        <div id="teLapRows" style="display:flex;flex-direction:column;gap:8px"></div>
+        <button class="btn ghost sm" type="button" id="teAddLap" style="margin-top:12px">+ Agregar vuelta</button>
+        <div style="margin-top:18px"><button class="btn solid" type="button" id="teGuardar">Guardar mis tiempos</button></div>
+        <div class="mini" style="margin-top:10px">//// La mejor vuelta, el tiempo total y las diferencias se calculan solos con tus tiempos. La posición es opcional. No son tiempos oficiales de la organización.</div>
+      </div>
+    </div>
+
     <div class="panel">
       <div class="panel-head">
         <span class="t">Tu galería</span>
@@ -1253,6 +1275,10 @@ const RIDER = {
       '</td><td class="pos">' + (l.posicion || '') + '</td></tr>').join("") ||
       '<tr><td colspan="4" class="mini" style="padding:18px">//// Los tiempos de tu carrera aparecerán aquí</td></tr>';
 
+    /* Mis tiempos: precargar editor con flechitas */
+    TELE.load(c, laps);
+    $("teMsg").textContent = "";
+
     /* fotos con URLs firmadas */
     const { data: fotos } = await SB.from("fotos").select("*").eq("corredor_id", c.id).order("creado");
     $("editStatus").textContent = (c.estatus || "") + " — " + (c.avance || 0) + "% · " + (fotos?.length || 0) + " archivos";
@@ -1335,6 +1361,115 @@ $("setCompartir").addEventListener("change", async e => {
   if(error){ e.target.checked = !val; msg.style.color = "#D97B7B"; msg.textContent = "// " + error.message; return; }
   if(APP.perfil) APP.perfil.acepta_compartir = val;
   msg.style.color = "var(--polvo)"; msg.textContent = val ? "✓ Gracias, autorizaste compartir tus fotos" : "✓ Preferencia guardada (no compartir)";
+});
+
+/* Mis tiempos del corredor: editor con flechitas; mejor vuelta, total y diferencias automáticos */
+const TELE = {
+  laps: [],
+  posOpts(sel){
+    var o = '<option value="">—</option>';
+    for(var i=1;i<=30;i++){ o += '<option value="P'+i+'"' + (sel==='P'+i?' selected':'') + '>P'+i+'</option>'; }
+    return o;
+  },
+  parse(str){ var m = /^(\d+):(\d+)\.(\d+)$/.exec((str||"").trim()); return m ? {min:+m[1],seg:+m[2],dec:+m[3]} : {min:0,seg:0,dec:0}; },
+  tenths(l){ return (l.min*60 + l.seg)*10 + l.dec; },
+  fromTenths(t){ var dec=t%10, s=(t-dec)/10; return {min:Math.floor(s/60), seg:s%60, dec:dec}; },
+  fmtLap(l){ return l.min + ":" + String(l.seg).padStart(2,"0") + "." + l.dec; },
+  fmtTotal(t){ var s=Math.round(t/10), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+    return (h>0 ? h+":"+String(m).padStart(2,"0") : ""+m) + ":" + String(sec).padStart(2,"0"); },
+  fmtDiff(d){ if(d<=0) return "—"; var dec=d%10, s=(d-dec)/10;
+    return s<60 ? "+"+s+"."+dec : "+"+Math.floor(s/60)+":"+String(s%60).padStart(2,"0")+"."+dec; },
+  load(c, vueltas){
+    this.laps = (vueltas||[]).map(function(v){ var p=TELE.parse(v.tiempo); p.pos=(v.posicion||"").replace(/[^\d]/g,""); return p; });
+    $("teP").value = (c.posicion||"").replace(/[^\d]/g,"");
+    $("teV").value = (c.velocidad_max||"").toString().replace(/[^\d]/g,"");
+    this.render();
+  },
+  numInput(cls, val, max){
+    return '<input class="'+cls+'" type="number" min="0" max="'+max+'" inputmode="numeric" value="'+val+'" style="width:52px;text-align:center;background:var(--carbon);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);padding:8px 4px">';
+  },
+  render(){
+    var rows = $("teLapRows"); rows.innerHTML = "";
+    this.laps.forEach(function(l, i){
+      var row = document.createElement("div");
+      row.className = "telap"; row.dataset.i = i;
+      row.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:13px";
+      row.innerHTML =
+        '<span style="color:var(--gris);min-width:70px">Vuelta '+(i+1)+'</span>' +
+        TELE.numInput("tmin", l.min, 99) + '<span>:</span>' +
+        TELE.numInput("tseg", l.seg, 59) + '<span>.</span>' +
+        TELE.numInput("tdec", l.dec, 9) +
+        '<span style="color:var(--gris)">Pos</span>' + TELE.numInput("tpos", l.pos, 9999) +
+        '<span class="tdif" style="color:var(--gris);min-width:66px">dif —</span>' +
+        '<button class="btn ghost sm tdel" type="button" aria-label="Quitar vuelta">✕</button>';
+      row.querySelector(".tmin").addEventListener("input", function(e){ l.min = Math.max(0,+e.target.value||0); TELE.recompute(); });
+      row.querySelector(".tseg").addEventListener("input", function(e){ l.seg = Math.min(59,Math.max(0,+e.target.value||0)); TELE.recompute(); });
+      row.querySelector(".tdec").addEventListener("input", function(e){ l.dec = Math.min(9,Math.max(0,+e.target.value||0)); TELE.recompute(); });
+      row.querySelector(".tpos").addEventListener("input", function(e){ l.pos = e.target.value; });
+      row.querySelector(".tdel").addEventListener("click", function(){ TELE.laps.splice(i,1); TELE.render(); });
+      rows.appendChild(row);
+    });
+    this.recompute();
+  },
+  recompute(){
+    var arr = this.laps.map(function(l){ return TELE.tenths(l); });
+    var valid = arr.filter(function(t){ return t>0; });
+    var best = valid.length ? Math.min.apply(null, valid) : 0;
+    var total = arr.reduce(function(a,b){ return a+b; }, 0);
+    $("teBest").textContent = best ? this.fmtLap(this.fromTenths(best)) : "—";
+    $("teTotal").textContent = total ? this.fmtTotal(total) : "—";
+    $("teLapRows").querySelectorAll(".telap").forEach(function(row, i){
+      var t = arr[i];
+      row.querySelector(".tdif").textContent = "dif " + ((t>0 && best) ? TELE.fmtDiff(t-best) : "—");
+    });
+  },
+  datos(){
+    var arr = this.laps.map(function(l){ return TELE.tenths(l); });
+    var valid = arr.filter(function(t){ return t>0; });
+    var best = valid.length ? Math.min.apply(null, valid) : 0;
+    var total = arr.reduce(function(a,b){ return a+b; }, 0);
+    var vueltas = this.laps.map(function(l){
+      var t = TELE.tenths(l);
+      return { tiempo: t>0 ? TELE.fmtLap(l) : "", diferencia: (t>0 && best) ? TELE.fmtDiff(t-best) : "", posicion: l.pos ? ("P"+l.pos) : "" };
+    }).filter(function(v){ return v.tiempo; });
+    return {
+      posicion: $("teP").value ? ("P"+$("teP").value) : "",
+      velocidad_max: $("teV").value ? ($("teV").value + " km/h") : "",
+      mejor_vuelta: best ? TELE.fmtLap(TELE.fromTenths(best)) : "",
+      tiempo_total: total ? TELE.fmtTotal(total) : "",
+      vueltas: vueltas
+    };
+  }
+};
+$("teAddLap").addEventListener("click", function(){ TELE.laps.push({min:0,seg:0,dec:0,pos:""}); TELE.render(); });
+$("teGuardar").addEventListener("click", async function(){
+  if(!RIDER.corredor || RIDER.preview) return;
+  var msg = $("teMsg"); msg.style.color = "";
+  var d = TELE.datos();
+  var btn = $("teGuardar"); btn.disabled = true; btn.textContent = "Guardando…";
+  var res = await SB.rpc("actualizar_telemetria", {
+    p_corredor_id: RIDER.corredor.id,
+    p_posicion: d.posicion, p_mejor_vuelta: d.mejor_vuelta,
+    p_tiempo_total: d.tiempo_total, p_velocidad_max: d.velocidad_max,
+    p_vueltas: d.vueltas
+  });
+  btn.disabled = false; btn.textContent = "Guardar mis tiempos";
+  if(res.error){ msg.style.color = "#D97B7B"; msg.textContent = "// " + res.error.message; return; }
+  msg.style.color = "var(--polvo)"; msg.textContent = "✓ Tiempos guardados";
+  var c = RIDER.corredor;
+  c.posicion = d.posicion; c.mejor_vuelta = d.mejor_vuelta; c.tiempo_total = d.tiempo_total; c.velocidad_max = d.velocidad_max;
+  $("tPos").textContent = c.posicion || "—";
+  $("tBest").textContent = c.mejor_vuelta || "—";
+  $("tTotal").textContent = c.tiempo_total || "—";
+  $("tVmax").textContent = c.velocidad_max || "—";
+  var lr = await SB.from("vueltas").select("*").eq("corredor_id", c.id).order("numero");
+  var laps = lr.data || [];
+  $("lapsMeta").textContent = laps.length + " vueltas";
+  $("lapsBody").innerHTML = laps.map(function(l){
+    return '<tr class="' + (l.tiempo === c.mejor_vuelta ? 'best' : '') + '"><td>' + String(l.numero).padStart(2,"0") +
+      (l.tiempo === c.mejor_vuelta ? ' ★' : '') + '</td><td>' + l.tiempo + '</td><td>' + (l.diferencia || '—') +
+      '</td><td class="pos">' + (l.posicion || '') + '</td></tr>';
+  }).join("") || '<tr><td colspan="4" class="mini" style="padding:18px">//// Aún no has capturado tus tiempos</td></tr>';
 });
 
 /* ---------- PANEL ADMIN ---------- */
@@ -1461,6 +1596,7 @@ const ADMIN = {
     $("previewBanner").style.display = "flex";
     $("previewName").textContent = "#" + (data.numero ?? "—") + " · " + data.nombre;
     $("ajustesPanel").style.display = "none";
+    $("teleEditPanel").style.display = "none";
     $("riderLogout").style.display = "none";
     $("riderWho").innerHTML = "Vista previa";
     $("riderPortal").style.zIndex = "210";
@@ -1475,6 +1611,7 @@ const ADMIN = {
     RIDER.preview = false;
     $("previewBanner").style.display = "none";
     $("ajustesPanel").style.display = "";
+    $("teleEditPanel").style.display = "";
     $("riderLogout").style.display = "";
     $("riderWho").innerHTML = "Sesión iniciada";
   },
