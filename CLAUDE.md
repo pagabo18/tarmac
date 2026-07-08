@@ -1,6 +1,6 @@
 # CLAUDE.md — Proyecto TARMAC
 
-Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: 2026-07-07 (login por número + descarga + provisión de acceso).
+Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: 2026-07-08 (Ajustes del corredor + login por correo + consentimiento para compartir).
 
 ## Qué es Tarmac
 
@@ -43,7 +43,7 @@ Tablas (todas con RLS activado):
 - `admins_autorizados` (email) — emails que reciben es_admin automáticamente al registrarse. Actuales: pagabo18@hotmail.com, brianrso@hotmail.com
 - `proyectos` (nombre, disciplina, fecha, ubicacion, estatus)
 - `corredores` (proyecto_id, usuario_id, numero, nombre, email, **descarga_url**, moto, categoria, color_galeria, diseno_galeria, estatus, avance, posicion, mejor_vuelta, tiempo_total, velocidad_max) — `descarga_url` = link externo (Drive/WeTransfer) para el botón "Descargar todas mis fotos" del portal
-- `perfiles` incluye además `acepta_terminos` (bool) y `acepta_fecha` — consentimiento de uso de imagen
+- `perfiles` incluye además `acepta_terminos` (bool) y `acepta_fecha` — consentimiento de uso de imagen; y `acepta_compartir` (bool, default false) + `acepta_compartir_fecha` — consentimiento para usar sus fotos/videos en la página pública (curaduría manual del admin)
 - `vueltas` (corredor_id, numero, tiempo, diferencia, posicion)
 - `fotos` (corredor_id, ruta, frame, es_video, favorita)
 
@@ -64,6 +64,8 @@ Mecánica (todo detrás de un **email sintético** invisible para el corredor):
 - Consentimiento de uso de imagen: como se quitó el registro con checkbox, se pide en el **primer login del corredor** (modal `consentModal`) si `perfiles.acepta_terminos` es falso; el botón llama a la RPC `aceptar_terminos()` (SECURITY DEFINER, solo `authenticated`, actualiza su propia fila).
 
 Migraciones/funciones relevantes: `login_numero_descarga`, `eventos_por_numero_distinct`, `aceptar_terminos_rpc`; Edge Function `provisionar_corredor`.
+
+**Ajustes del corredor + login por correo + compartir (2026-07-08, EN PROD):** El portal tiene una sección **⚙️ Ajustes** donde el corredor ve su número (solo lectura), edita su **nombre** y **correo**, y activa/desactiva el consentimiento de **compartir en la web**. RPCs `SECURITY DEFINER` (solo `authenticated`, actúan sobre `auth.uid()`): `actualizar_datos_corredor(p_nombre,p_email)` (actualiza todas sus fichas + `perfiles.nombre`) y `actualizar_consentimiento_compartir(p_acepta)`. El **login del corredor acepta número _o_ correo** en un solo campo: si tiene `@` usa la RPC `eventos_por_correo(p_email)` (SECURITY DEFINER, `anon`; ignora correos vacíos, insensible a may/min; devuelve proyecto_id+numero+nombre+fecha), si no, `eventos_por_numero`; luego evento → contraseña (mismo email sintético). El **panel admin** muestra la etiqueta "🌐 comparte" en los corredores que autorizaron. Archivos SQL de registro: `sql/ajustes_compartir.sql`, `sql/login_por_correo.sql`.
 
 ⚠️ IMPORTANTE (lección de esta feature): el trabajo de frontend de la sesión del 2026-07-07 se **perdió** porque nunca se commiteó a git ni se guardó en disco (solo sobrevivieron las migraciones, que van server-side). **Commitear `index.html` a git en cuanto un cambio quede estable.**
 
