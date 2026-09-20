@@ -1,6 +1,6 @@
 # CLAUDE.md — Proyecto TARMAC
 
-Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: **2026-07-08** (portal ampliado: Ajustes, login por número/correo, telemetría editable, estado admin, consentimiento blindado, contacto por Instagram).
+Contexto completo para que Claude (o cualquier desarrollador) pueda continuar el trabajo en cualquier conversación futura. Última actualización: **2026-09-20** (galería pública de la última carrera, lightbox con navegación, mosaico en el portal, herramientas admin para girar/publicar/borrar fotos, fotos y textos de la portada corregidos).
 
 ## Qué es Tarmac
 
@@ -11,7 +11,7 @@ Negocio de fotografía y video de motorsport de Gabriel Hernández (usuario: pag
 - Sitio en producción: **https://tarmac.mx** (dominio propio vía `CNAME`) y https://pagabo18.github.io/tarmac/ — ambos sirven la rama `main` por GitHub Pages.
 - Repositorio: https://github.com/pagabo18/tarmac (público)
 - Archivo principal: `index.html` — TODO el sitio vive en un solo archivo autocontenido (~1.07 MB): HTML + CSS + JS + fotos en base64.
-- `sql/` — copias de registro de cada migración/función aplicada a Supabase (la versión ejecutada va por el conector MCP; estos archivos son la referencia en git).
+- `sql/` — copias de registro de cada migración/función aplicada a Supabase (la versión ejecutada va por el conector MCP; estos archivos son la referencia en git). **Pendiente de aplicar: `sql/galeria_publica.sql`** (ver Estado actual).
 - `docs/superpowers/` — spec y plan de la 1ª feature (Ajustes + compartir).
 - Supabase project ref: `hhjkhaogrzjzdqdpracm` (org: "tarmac", región us-west-2)
 - Supabase URL: https://hhjkhaogrzjzdqdpracm.supabase.co
@@ -28,7 +28,7 @@ Negocio de fotografía y video de motorsport de Gabriel Hernández (usuario: pag
 4. **Probar antes de publicar (recomendado):** servir el `index.html` en un servidor local (ej. `python -m http.server 8000` o un pequeño server de node) y abrir `http://localhost:8000/`. Funciona contra el backend REAL de Supabase (prod), así que las pruebas son fieles sin exponer el frontend nuevo al público. Añadir cabecera `Cache-Control: no-store` evita recargar con Ctrl+Shift+R.
 5. Validar la sintaxis del JS antes de subir (el sitio es un solo archivo; un error rompe todo): extraer los `<script>` internos y correrlos por `new vm.Script(...)` en node.
 
-**Base de datos:** usar el **conector MCP de Supabase** (`apply_migration` para DDL/funciones, `execute_sql` para datos/consultas). Va directo a producción; solo cambios aditivos/no destructivos. `auth.uid()` es null vía MCP, así que las RPCs con `SECURITY DEFINER` que checan sesión/`soy_admin()` no se pueden probar por MCP — se prueban en el navegador.
+**Base de datos:** usar el **conector MCP de Supabase** (`apply_migration` para DDL/funciones, `execute_sql` para datos/consultas). Va directo a producción; solo cambios aditivos/no destructivos. Si el MCP responde "You do not have permission" (pasó el 2026-09-20), el plan B es que Gabriel pegue el archivo `.sql` en **Supabase → SQL Editor → Run**; el frontend avisa en el panel admin si falta una migración. `auth.uid()` es null vía MCP, así que las RPCs con `SECURITY DEFINER` que checan sesión/`soy_admin()` no se pueden probar por MCP — se prueban en el navegador.
 
 Nota de entorno Claude: el sandbox de código solo alcanza `github.com`/`api.github.com`. NO alcanza `*.supabase.co`, SmugMug, Drive ni `tarmac.mx`. Por eso: la BD se toca por MCP, y descargar/subir fotos a Supabase lo hace Gabriel desde el navegador (o se prepara localmente y se sube por el panel).
 
@@ -49,7 +49,8 @@ Nota de entorno Claude: el sandbox de código solo alcanza `github.com`/`api.git
   - `fotos_totales` = cuántos archivos hay en ese link (se muestra en el portal para que el corredor sepa cuándo se actualiza).
   - `descarga_ultima`/`descarga_veces` = seguimiento de clics en el botón de descarga.
 - `vueltas` (corredor_id, numero, tiempo, diferencia, posicion).
-- `fotos` (corredor_id, ruta, frame, es_video, favorita). Storage: bucket privado `fotos`, rutas `{corredor_id}/{timestamp}-{archivo}`, URLs firmadas 1h.
+- `fotos` (corredor_id, ruta, frame, es_video, favorita, **publica**). Storage: bucket privado `fotos`, rutas `{corredor_id}/{timestamp}-{archivo}`, URLs firmadas 1h.
+  - `publica` = el admin la marcó 🌐 para la **galería pública** de la página principal. Solo se ve si además el corredor aceptó la autorización de uso de imagen (`perfiles.acepta_terminos`) y no ha retirado el permiso (`revoca_compartir_fecha` nulo o `acepta_compartir` true). La política de storage `fotos publicas visibles` deja a `anon` firmar solo esas rutas.
 
 **Estatus y avance automático** (`ESTATUS` + `AVANCE_ESTATUS` en el JS): al cambiar el estatus en el panel, el avance salta solo. Sin contenido→0 · Sin editar→10 · **Seleccionando→25** · En edición→40 · Revisión→70 · Entregado→100.
 
@@ -75,23 +76,31 @@ El corredor entra con su **número _o_ su correo registrado** + evento + contras
 - `actualizar_telemetria(corredor_id, posicion, mejor_vuelta, tiempo_total, velocidad_max, vueltas jsonb)` — el corredor edita SU telemetría y vueltas (verifica `usuario_id=auth.uid()`, reemplaza vueltas).
 - `registrar_descarga(corredor_id)` — cuenta los clics del corredor en el botón de descarga.
 - `estado_corredores(proyecto_id)` — solo admin (`soy_admin()`); estado consolidado por corredor incl. última sesión real de `auth.users.last_sign_in_at`, fotos subidas, comparte, etc.
+- `fotos_publicas()` — anon; lista de fotos públicas (ruta, número del corredor, evento; nunca nombre/correo) para la galería de la página principal. `foto_publica_por_ruta(text)` — helper SECURITY DEFINER que usa la política de `storage.objects` para que `anon` pueda firmar esas rutas.
 
-Archivos SQL de registro en `sql/`: `ajustes_compartir.sql`, `login_por_correo.sql`, `actualizar_telemetria.sql`, `fotos_totales.sql`, `estado_corredores.sql`, `compartir_solo_aceptar.sql`.
+Archivos SQL de registro en `sql/`: `ajustes_compartir.sql`, `login_por_correo.sql`, `actualizar_telemetria.sql`, `fotos_totales.sql`, `estado_corredores.sql`, `compartir_solo_aceptar.sql`, `galeria_publica.sql` (**pendiente de aplicar**).
 
 ## Funcionalidad del sitio
 
 **Portal del corredor:**
 - Número dorsal gigante con **foto de portada propia** (una de sus fotos), tags, telemetría, tabla de vueltas.
-- Galería: **click en foto → lightbox** (foto ampliada al centro), favoritas ★, descarga individual. Nota de "muestra" (si tiene 4+ fotos, avisa que la galería completa está en el link) y "seguimos subiendo más".
+- Galería en **mosaico con proporción real** (o "Rollo" horizontal): **click en foto → lightbox** con ← → , teclado, swipe, contador y descarga; favoritas ★, descarga individual. Las fotos que el admin publicó en la página llevan un 🌐. Nota de "muestra" (si tiene 4+ fotos, avisa que la galería completa está en el link) y "seguimos subiendo más".
 - **Botón "⬇ Descargar TODAS mis fotos (N)"** (N = `fotos_totales`); registra la descarga.
 - **⚙️ Ajustes**: ve su número (solo lectura), edita **nombre** y **correo**, e interruptor de **compartir** (solo se puede ACEPTAR, con confirmación; para retirar debe escribir por Instagram — lo quita el admin).
 - **🏁 Mis tiempos**: editor con inputs tipo flechitas (min:seg.déc) para cada vuelta, posición **manual** (input numérico, hay ~1000 corredores), botón agregar/quitar vuelta. **Mejor vuelta, tiempo total y diferencias se calculan solos** (módulo JS `TELE`). Posición opcional. Guarda vía `actualizar_telemetria`.
 
-**Panel admin:** crear proyectos; por proyecto una lista de corredores con: **conteo de fotos**, **filtro por estatus**, estatus (select, mueve el avance solo), avance (%), y por corredor bajo el nombre un **estado**: correo, si ya entró (última sesión), cuántas veces descargó, y 🌐 comparte con enlace **"(quitar)"**. Botones por fila: **"👁 Ver portal"** (vista previa del portal del corredor sin loguearse — oculta Ajustes y Mis tiempos), "🔑 Acceso", "✎ Editar" (incl. `descarga_url` y `fotos_totales`), "Fotos ↑", "Tele", "✕". Arriba: filtro + **"🔑 Dar acceso a todos (con link)"**. Subir fotos: sueltas o ZIP (JSZip, original sin recompresión).
+**Página principal:** tira de contactos (7 fotos embebidas, con lightbox), carrusel, showreel y la sección **"Última carrera"** (`#galeria`): galería pública en mosaico que se llena desde `fotos_publicas()` con filtros por número de corredor, "Ver más" y lightbox. Si no hay fotos públicas (o falla la RPC), la sección y su link del menú se ocultan solos. Las imágenes embebidas se asignan por `data-pic` en el mapa `PIC`; `data-bg` solo aplica donde NO hay `data-pic` (antes pisaba las fotos del carrusel y por eso se veían fotos y textos cruzados).
+
+**Panel admin:** crear proyectos; por proyecto una lista de corredores con: **conteo de fotos**, **filtro por estatus**, estatus (select, mueve el avance solo), avance (%), y por corredor bajo el nombre un **estado**: correo, si ya entró (última sesión), cuántas veces descargó, y 🌐 comparte con enlace **"(quitar)"**. Botones por fila: **"👁 Ver portal"** (vista previa del portal del corredor sin loguearse — oculta Ajustes y Mis tiempos; en esta vista cada foto tiene **↺ ↻ girar y guardar** (re-encode en canvas, sube archivo nuevo y actualiza `fotos.ruta`; arregla las que se subieron volteadas), **🌐 publicar/ocultar** en la página y **✕ eliminar**, más una barra con el permiso del corredor y "Publicar todas / Ocultar todas"), "🔑 Acceso", "✎ Editar" (incl. `descarga_url` y `fotos_totales`), "Fotos ↑", "Tele", "✕". Arriba: filtro + **"🔑 Dar acceso a todos (con link)"** + **"🌐 Publicar todas en la web" / "Ocultar de la web"** (todo el proyecto). En la línea de estado de cada corredor: `✓ autorizó uso de imagen` / `sin autorización aún` y `🖼 N en la web`. Subir fotos: sueltas o ZIP (JSZip, original sin recompresión).
 
 **Contacto:** el correo se reemplazó por Instagram **@tarmac_official_** (botón de contacto + avisos legales).
 
-## Estado actual (2026-07-08)
+## Estado actual (2026-09-20)
+
+- **Pendiente (Gabriel, 5 min):** aplicar `sql/galeria_publica.sql` en Supabase → SQL Editor; luego en el panel admin abrir el proyecto → "🌐 Publicar todas en la web" (o marcar foto por foto con 👁 Ver portal → 🌐). Las fotos giradas se arreglan con ↺ ↻ en 👁 Ver portal.
+- Las fotos de muestra subidas en julio se reescalaron sin respetar la orientación EXIF (por eso varias se ven volteadas); no hay forma de corregirlas desde el sandbox (no alcanza Supabase), se giran desde el navegador con la herramienta admin.
+
+### Estado previo (2026-07-08)
 
 - Proyecto: **Enduro 2026 Atemajac** (2026-06-28) con **25 corredores** (el #28 duplicado se resolvió; #532 y #730 tienen su número como nombre para que ellos lo pongan).
 - **20 corredores** con `descarga_url` (link SmugMug), **acceso** creado (contraseña `Atemajac2026#<número>`) y **fotos de muestra** (2-4 c/u, reescaladas ~1600px). El #28 fue el de pruebas.

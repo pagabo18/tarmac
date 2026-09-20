@@ -2,6 +2,23 @@
 
 Registro de cambios publicados en producción (tarmac.mx / GitHub Pages, rama `main`).
 
+## 2026-09-20
+
+### Página principal
+- **Fotos y textos cruzados corregidos**: el carrusel "Destacados" mostraba fotos distintas a sus títulos porque `data-bg` pisaba las fotos `data-pic`; ahora cada slide muestra su foto y los textos describen lo que se ve (Supra de frente, barrido en el bosque, paddock, curva de tierra roja). La tira de contactos pasó de 5 a **7 fotos únicas** con etiqueta correcta (ENDURO / LUJO / PADDOCK) y **se abren en lightbox**.
+- **Nueva sección "Última carrera"** (`#galeria` + link "Galería" en el menú): galería pública en mosaico con las fotos que el admin marcó 🌐 de corredores que aceptaron la autorización de uso de imagen. Filtros por número de corredor, "Ver más" (24 en 24) y lightbox. Se oculta sola si no hay fotos públicas.
+- **Lightbox nuevo** para todo el sitio: ← → , teclado, swipe, contador, leyenda, botón de descarga (solo en el portal), soporte de video.
+
+### Portal del corredor
+- Galería en **mosaico con proporción real** (ya no recorta a cuadrados); "Rollo" sigue siendo horizontal. Badge 🌐 en las fotos publicadas en la página.
+
+### Panel admin
+- En **👁 Ver portal**: por foto **↺ ↻ girar y guardar** (arregla las que se subieron volteadas), **🌐 publicar/ocultar** y **✕ eliminar**; barra con el permiso del corredor y "Publicar todas / Ocultar todas".
+- En el proyecto: **"🌐 Publicar todas en la web" / "Ocultar de la web"**; en cada fila `✓ autorizó uso de imagen` y `🖼 N en la web`. Aviso en rojo si falta aplicar la migración.
+
+### Base de datos (`sql/galeria_publica.sql`, **pendiente de aplicar** — el MCP no tuvo permiso en esta sesión)
+- `fotos.publica`, RPC `fotos_publicas()` (anon), helper `foto_publica_por_ruta(text)` y política de storage `fotos publicas visibles` para que el público solo pueda firmar las fotos públicas.
+
 ## 2026-07-08
 
 Sesión grande. Todo lo de abajo quedó **en producción** y probado.
