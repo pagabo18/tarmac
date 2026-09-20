@@ -410,6 +410,62 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
 .chk label{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--gris);line-height:1.9;text-transform:none}
 .chk label a{color:var(--polvo);text-decoration:underline}
 
+
+/* =================== v5: galería pública · lightbox · mosaico =================== */
+.pub-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:26px;flex-wrap:wrap}
+.pub-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.chip-btn{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;padding:8px 14px;border:1px solid var(--linea);background:transparent;color:var(--gris);transition:border-color .2s,color .2s,background .2s;white-space:nowrap}
+.chip-btn:hover{border-color:var(--polvo);color:var(--hueso)}
+.chip-btn.on{background:var(--polvo);color:var(--asfalto);border-color:var(--polvo)}
+.pubgal{columns:4 240px;column-gap:14px}
+.pg{position:relative;break-inside:avoid;margin:0 0 14px;border:1px solid var(--linea);background:var(--carbon);overflow:hidden;cursor:zoom-in;opacity:0;transform:translateY(14px);animation:pgin .7s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes pgin{to{opacity:1;transform:none}}
+.pg img,.pg video{width:100%;height:auto;display:block;filter:saturate(.9) contrast(1.04);transition:transform .6s cubic-bezier(.2,.7,.2,1),filter .4s}
+.pg:hover img,.pg:hover video{transform:scale(1.04);filter:saturate(1.05) contrast(1.06)}
+.pg .tag{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;padding:10px 12px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;background:linear-gradient(transparent,rgba(10,9,7,.85));color:var(--hueso);pointer-events:none}
+.pg .tag em{color:var(--polvo);font-style:normal}
+.pg .vid{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;border:1px solid var(--polvo);display:flex;align-items:center;justify-content:center;background:rgba(12,15,20,.5);font-size:10px;color:var(--polvo);pointer-events:none}
+.pub-foot{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:22px}
+.pub-empty{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gris);padding:30px;border:1px dashed var(--linea);text-align:center;line-height:2}
+
+/* lightbox con navegación */
+.lb{position:fixed;inset:0;z-index:260;background:rgba(6,8,12,.96);display:none;align-items:center;justify-content:center;padding:18px}
+.lb.open{display:flex}
+.lb-fig{position:relative;max-width:min(96vw,1400px);display:flex;flex-direction:column;align-items:center;gap:12px;margin:0}
+.lb-fig img,.lb-fig video{max-width:96vw;max-height:calc(100vh - 120px);width:auto;height:auto;object-fit:contain;box-shadow:0 12px 70px rgba(0,0,0,.7);cursor:zoom-out;background:var(--carbon)}
+.lb-cap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;justify-content:center;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gris);text-align:center}
+.lb-cap b{color:var(--polvo);font-weight:500}
+.lb-cap a{color:var(--hueso);border:1px solid var(--linea);padding:6px 10px;transition:border-color .2s,color .2s}
+.lb-cap a:hover{border-color:var(--polvo);color:var(--polvo)}
+.lb-btn{position:absolute;top:50%;transform:translateY(-50%);width:52px;height:64px;background:rgba(12,15,20,.55);border:1px solid var(--linea);color:var(--hueso);font-size:20px;z-index:2;transition:border-color .2s,color .2s;display:none}
+.lb.multi .lb-btn{display:block}
+.lb-btn:hover{border-color:var(--polvo);color:var(--polvo)}
+.lb-prev{left:12px}.lb-next{right:12px}
+.lb-x{position:absolute;top:14px;right:14px;width:44px;height:44px;background:rgba(12,15,20,.55);border:1px solid var(--linea);color:var(--hueso);font-size:16px;z-index:2}
+.lb-x:hover{border-color:var(--polvo);color:var(--polvo)}
+.lb-count{position:absolute;top:24px;left:20px;font-family:var(--mono);font-size:11px;letter-spacing:.24em;color:var(--gris)}
+.lb-count b{color:var(--polvo);font-weight:500}
+@media(max-width:640px){.lb-btn{width:40px;height:52px;font-size:16px}.lb-prev{left:6px}.lb-next{right:6px}.lb-fig img,.lb-fig video{max-height:calc(100vh - 150px)}}
+body.lb-open{overflow:hidden}
+
+/* galería del corredor: mosaico con proporción real */
+.pgal{display:block;columns:3 220px;column-gap:12px}
+.pgal .pitem{break-inside:avoid;margin:0 0 12px;aspect-ratio:auto}
+.pgal .pitem img,.pgal .pitem video{width:100%;height:auto;display:block}
+.pgal.film{display:flex;overflow-x:auto;padding-bottom:12px;gap:12px}
+.pgal.film .pitem{flex:0 0 260px;aspect-ratio:3/4;margin:0}
+.pgal.film .pitem img,.pgal.film .pitem video{height:100%;object-fit:cover}
+.pitem .web{position:absolute;top:6px;right:40px;background:rgba(10,9,7,.7);border:1px solid var(--linea);color:var(--hueso);font-size:12px;width:28px;height:28px;display:flex;align-items:center;justify-content:center}
+.pitem .adm{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:flex-end;gap:4px;padding:6px;background:linear-gradient(transparent,rgba(10,9,7,.9));z-index:2}
+.pitem .adm button{background:rgba(12,15,20,.75);border:1px solid var(--linea);color:var(--hueso);font-size:13px;width:32px;height:30px;display:flex;align-items:center;justify-content:center;transition:border-color .2s,color .2s}
+.pitem .adm button:hover{border-color:var(--polvo);color:var(--polvo)}
+.pitem .adm button.on{border-color:var(--polvo);color:var(--polvo)}
+.pitem .busy{position:absolute;inset:0;background:rgba(12,15,20,.72);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--polvo);z-index:3}
+#riderPortal.preview .pitem .dl{display:none}
+.gal-admin{border:1px solid rgba(201,169,107,.45);background:rgba(201,169,107,.07);padding:12px 14px;margin-bottom:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.gal-admin .mini{letter-spacing:.1em;line-height:1.8}
+.gal-admin .mini b{color:var(--polvo);font-weight:500}
+img,video{image-orientation:from-image}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -440,6 +496,7 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
     <div class="nav-links">
       <a href="#disciplinas">Disciplinas</a>
       <a href="#trabajo">Trabajo</a>
+      <a href="#galeria" id="navGaleria" style="display:none">Galería</a>
       <a href="#servicios">Servicios</a>
       <a href="#contacto">Contacto</a>
     </div>
@@ -523,12 +580,36 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
   <div class="wrap reveal">
     <div class="strip-outer">
       <div class="strip">
-        <figure class="frame hud"><img data-pic="ENDURO1" src="" alt="Piloto de enduro #26 sobre Honda derrapando en tierra roja"><figcaption class="frame-tag"><span>FRM <em>0026</em></span><span>ENDURO</span></figcaption></figure>
-        <figure class="frame hud"><img data-pic="SUPRA1" src="" alt="Toyota Supra GR en sesión nocturna"><figcaption class="frame-tag"><span>FRM <em>0031</em></span><span>LUJO</span></figcaption></figure>
-        <figure class="frame hud"><img data-pic="ENDURO2" src="" alt="Piloto de enduro sobre KTM levantando polvo"><figcaption class="frame-tag"><span>FRM <em>0044</em></span><span>ENDURO</span></figcaption></figure>
-        <figure class="frame hud"><img data-pic="SUPRA2" src="" alt="Toyota Supra GR detalle de faros"><figcaption class="frame-tag"><span>FRM <em>0052</em></span><span>LUJO</span></figcaption></figure>
-        <figure class="frame hud"><img data-pic="SUPRA3" src="" alt="Toyota Supra GR vista trasera con luces"><figcaption class="frame-tag"><span>FRM <em>0058</em></span><span>LUJO</span></figcaption></figure>
+        <figure class="frame hud" tabindex="0" role="button" aria-label="Ver foto ampliada"><img data-pic="F_HONDA" src="" alt="Piloto #26 sobre Honda CRF abriendo gas en tierra roja"><figcaption class="frame-tag"><span>FRM <em>0026</em></span><span>ENDURO</span></figcaption></figure>
+        <figure class="frame hud" tabindex="0" role="button" aria-label="Ver foto ampliada"><img data-pic="F_SUPRA_R" src="" alt="Toyota GR Supra con las calaveras encendidas en el estacionamiento"><figcaption class="frame-tag"><span>FRM <em>0031</em></span><span>LUJO</span></figcaption></figure>
+        <figure class="frame hud" tabindex="0" role="button" aria-label="Ver foto ampliada"><img data-pic="F_179" src="" alt="Piloto #179 saltando sobre Yamaha azul en el bosque"><figcaption class="frame-tag"><span>FRM <em>0179</em></span><span>ENDURO</span></figcaption></figure>
+        <figure class="frame hud" tabindex="0" role="button" aria-label="Ver foto ampliada"><img data-pic="F_PAN" src="" alt="Barrido de piloto sobre KTM cruzando el bosque a toda velocidad"><figcaption class="frame-tag"><span>FRM <em>0044</em></span><span>ENDURO</span></figcaption></figure>
+        <figure class="frame hud" tabindex="0" role="button" aria-label="Ver foto ampliada"><img data-pic="F_KTM" src="" alt="Piloto sobre KTM naranja levantando polvo rojo"><figcaption class="frame-tag"><span>FRM <em>0052</em></span><span>ENDURO</span></figcaption></figure>
+        <figure class="frame hud" tabindex="0" role="button" aria-label="Ver foto ampliada"><img data-pic="F_PADDOCK" src="" alt="Tres motos de enduro en el paddock frente al agua"><figcaption class="frame-tag"><span>FRM <em>0058</em></span><span>PADDOCK</span></figcaption></figure>
+        <figure class="frame hud" tabindex="0" role="button" aria-label="Ver foto ampliada"><img data-pic="F_SUPRA_S" src="" alt="Toyota GR Supra de tres cuartos trasero bajo luz roja"><figcaption class="frame-tag"><span>FRM <em>0063</em></span><span>LUJO</span></figcaption></figure>
       </div>
+    </div>
+    <div class="strip-hint">//// Desliza para ver más · toca una foto para ampliarla</div>
+  </div>
+</section>
+
+<!-- ============ GALERÍA PÚBLICA DE LA ÚLTIMA CARRERA (se llena desde Supabase) ============ -->
+<section id="galeria" style="padding-top:0;display:none">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div>
+        <div class="eyebrow" id="galEyebrow">Última carrera</div>
+        <h2 class="display" id="galTitulo">Galería<br>de la carrera</h2>
+      </div>
+      <p>Fotos de los corredores que autorizaron compartirlas. ¿Corriste aquí? Entra con tu número en <a href="#acceso" style="color:var(--polvo);text-decoration:underline">Acceso</a> para ver y descargar toda tu galería.</p>
+    </div>
+    <div class="pub-chips" id="galProyectos" style="display:none"></div>
+    <div class="pub-chips" id="galChips"></div>
+    <div class="pubgal" id="pubgal"></div>
+    <div class="pub-foot">
+      <span class="mini" id="galMeta"></span>
+      <button class="btn" type="button" id="galMas" style="display:none">Ver más fotos</button>
+    </div>
   </div>
 </section>
 
@@ -577,14 +658,14 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
     <div class="car reveal">
       <div class="car-vp hud">
         <div class="car-track" id="carTrack">
-          <div class="car-slide on"><div class="im" data-pic="C1" data-bg="hero"></div><div class="veil"></div><span class="idx"><b>01</b> / 04</span>
+          <div class="car-slide on"><div class="im" data-pic="C1"></div><div class="veil"></div><span class="idx"><b>01</b> / 04</span>
             <div class="info"><div class="d">LUJO · SESIÓN</div><h3>Supra de<br>frente</h3><p>Toyota GR Supra bajo luz dramática, pintura mate.</p></div></div>
-          <div class="car-slide"><div class="im" data-pic="C2" data-bg="crop"></div><div class="veil"></div><span class="idx"><b>02</b> / 04</span>
-            <div class="info"><div class="d">LUJO · MOVIMIENTO</div><h3>Barrido<br>en el garaje</h3><p>Panning nocturno: la Supra cruzando entre columnas.</p></div></div>
-          <div class="car-slide"><div class="im" data-pic="C3" data-bg="hero" style="background-position:center 60%"></div><div class="veil"></div><span class="idx"><b>03</b> / 04</span>
-            <div class="info"><div class="d">LUJO · SESIÓN NOCTURNA</div><h3>Supra en<br>las sombras</h3><p>Toyota GR Supra en sesión editorial nocturna, pintura mate y luz dramática.</p></div></div>
-          <div class="car-slide"><div class="im" data-pic="C4" data-bg="crop" style="background-position:center 20%"></div><div class="veil"></div><span class="idx"><b>04</b> / 04</span>
-            <div class="info"><div class="d">LUJO · DETALLE</div><h3>Faros que<br>respiran</h3><p>El frente de la Supra bajo luz roja: pura actitud de máquina.</p></div></div>
+          <div class="car-slide"><div class="im" data-pic="C2"></div><div class="veil"></div><span class="idx"><b>02</b> / 04</span>
+            <div class="info"><div class="d">ENDURO · MOVIMIENTO</div><h3>Barrido<br>en el bosque</h3><p>Panning a ras de piso: el #26 cruzando entre los árboles a toda velocidad.</p></div></div>
+          <div class="car-slide"><div class="im" data-pic="C3" style="background-position:center 55%"></div><div class="veil"></div><span class="idx"><b>03</b> / 04</span>
+            <div class="info"><div class="d">ENDURO · PADDOCK</div><h3>Antes de<br>la salida</h3><p>Tres máquinas descansan frente al agua, minutos antes de arrancar.</p></div></div>
+          <div class="car-slide"><div class="im" data-pic="C4" style="background-position:center 35%"></div><div class="veil"></div><span class="idx"><b>04</b> / 04</span>
+            <div class="info"><div class="d">ENDURO · ATEMAJAC</div><h3>Curva de<br>tierra roja</h3><p>El #26 abriendo gas a la salida del bosque, polvo a contraluz.</p></div></div>
         </div>
       </div>
       <div class="car-ui">
@@ -750,8 +831,16 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
   </div>
 </div>
 
-<div id="lightbox" style="display:none;position:fixed;inset:0;z-index:260;background:rgba(6,8,12,.96);align-items:center;justify-content:center;padding:20px;cursor:zoom-out">
-  <img id="lightboxImg" alt="Foto ampliada" style="max-width:96%;max-height:96%;object-fit:contain;box-shadow:0 12px 70px rgba(0,0,0,.7)">
+<div id="lightbox" class="lb" role="dialog" aria-label="Foto ampliada">
+  <span class="lb-count" id="lbCount"></span>
+  <button class="lb-x" type="button" id="lbClose" aria-label="Cerrar">✕</button>
+  <button class="lb-btn lb-prev" type="button" id="lbPrev" aria-label="Anterior">←</button>
+  <figure class="lb-fig" id="lbFig">
+    <img id="lightboxImg" alt="Foto ampliada">
+    <video id="lightboxVid" controls playsinline style="display:none"></video>
+    <figcaption class="lb-cap"><span id="lbCap"></span><a id="lbDl" href="#" download target="_blank" rel="noopener" style="display:none">Descargar original ↓</a></figcaption>
+  </figure>
+  <button class="lb-btn lb-next" type="button" id="lbNext" aria-label="Siguiente">→</button>
 </div>
 
 <div class="portal" id="riderPortal" role="dialog" aria-label="Portal del corredor">
@@ -846,6 +935,7 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
           </div>
         </div>
         <a id="dlAll" href="#" target="_blank" rel="noopener" class="btn solid" style="display:none;text-align:center;margin-bottom:20px">⬇ Descargar TODAS mis fotos</a>
+        <div id="galAdmin" class="gal-admin" style="display:none"></div>
         <div id="galNota" class="mini" style="margin-bottom:16px;line-height:1.9"></div>
         <div class="pgal" id="pgal"></div>
         <div class="mini" style="margin-top:16px">//// Marca ★ tus favoritas para edición extra o impresión · Descargas en calidad original</div>
@@ -911,7 +1001,10 @@ html.cx .cur-dot,html.cx .cur-ring{display:block}
             <label class="mini" style="letter-spacing:.1em">Filtrar:</label>
             <select id="filtroEstatus" style="background:var(--carbon2);border:1px solid var(--linea);color:var(--hueso);font-family:var(--mono);font-size:12px;padding:8px"></select>
             <button class="btn sm solid" type="button" id="darAccesoTodos" onclick="ADMIN.darAccesoTodos()" style="margin-left:auto">🔑 Dar acceso a todos (con link)</button>
+            <button class="btn sm ghost" type="button" onclick="ADMIN.publicarProyecto(true)" title="Marca todas las fotos de este proyecto para la galería pública de la página">🌐 Publicar todas en la web</button>
+            <button class="btn sm ghost" type="button" onclick="ADMIN.publicarProyecto(false)" title="Quita todas las fotos de este proyecto de la galería pública">Ocultar de la web</button>
           </div>
+          <div class="mini" id="webAviso" style="display:none;padding:10px 16px;border-top:1px solid var(--linea);color:#D97B7B"></div>
           <div class="panel-body adm-scroll" style="padding:0">
             <table class="adm">
               <thead><tr><th>Nº</th><th>Corredor</th><th>Fotos</th><th>Reels</th><th>Estatus</th><th>Avance</th><th></th></tr></thead>
@@ -1000,7 +1093,9 @@ const NB_F4 = "";
     HERO_A: NEW_H1, HERO_B: NEW_H2, HERO_C: NEW_H3,
     C1: NEW_C1, C2: NEW_C2, C3: NEW_C3, C4: NEW_C4,
     T1: NEW_T1, T2: NEW_T2, T3: NEW_T3, T4: NEW_T4, T5: NEW_T5,
-    SR: NEW_SR, R1: NEW_R1, R2: NEW_R2
+    SR: NEW_SR, R1: NEW_R1, R2: NEW_R2,
+    /* tira de contactos (cada clave = la foto que realmente se ve) */
+    F_HONDA: NEW_H1, F_SUPRA_R: NEW_T1, F_179: NEW_T2, F_PAN: NEW_H3, F_KTM: NEW_T3, F_PADDOCK: NEW_T4, F_SUPRA_S: NEW_T5
   };
   function set(){
     // hero slideshow (3)
@@ -1010,9 +1105,19 @@ const NB_F4 = "";
     document.querySelectorAll("img[data-pic]").forEach(im=>{ const p = PIC[im.dataset.pic]; if(p) im.src = p; });
     // cualquier fondo [data-pic]
     document.querySelectorAll("[data-pic]").forEach(el=>{ if(el.tagName==="IMG") return; const p = PIC[el.dataset.pic]; if(p) el.style.backgroundImage = "url(" + p + ")"; });
-    // showreel poster + reels-mini (siguen con data-bg)
-    document.querySelectorAll("[data-bg=hero]").forEach(d=> d.style.backgroundImage = "url(" + NEW_SR + ")");
-    document.querySelectorAll("[data-bg=crop]").forEach(d=> d.style.backgroundImage = "url(" + NEW_R1 + ")");
+    // fondos genéricos (data-bg) SOLO donde no hay data-pic — antes pisaban las fotos del carrusel
+    document.querySelectorAll("[data-bg=hero]:not([data-pic])").forEach(d=> d.style.backgroundImage = "url(" + NEW_SR + ")");
+    document.querySelectorAll("[data-bg=crop]:not([data-pic])").forEach(d=> d.style.backgroundImage = "url(" + NEW_R1 + ")");
+    // tira de contactos: clic/Enter abre la foto ampliada con navegación
+    const frames = [...document.querySelectorAll("#trabajo .frame")];
+    const abrir = i => {
+      const items = frames.map(x => ({ url: x.querySelector("img").src, cap: x.querySelector(".frame-tag").textContent.replace(/\s+/g, " ").trim() }));
+      if(window.LB) LB.open(items, i);
+    };
+    frames.forEach((f, i) => {
+      f.addEventListener("click", () => abrir(i));
+      f.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); abrir(i); } });
+    });
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", set);
   else set();
@@ -1290,8 +1395,9 @@ const RIDER = {
     $("editStatus").textContent = (c.estatus || "") + " — " + (c.avance || 0) + "% · " + (fotos?.length || 0) + " archivos";
     const g = $("pgal"); g.innerHTML = "";
     const nota = $("galNota");
+    this.pintarGalAdmin(c, fotos || []);
     if(!fotos || !fotos.length){
-      g.innerHTML = '<div class="mini" style="grid-column:1/-1;padding:30px;text-align:center">//// EN CUANTO SUBAMOS TUS FOTOS APARECERÁN AQUÍ</div>';
+      g.innerHTML = '<div class="mini" style="padding:30px;text-align:center">//// EN CUANTO SUBAMOS TUS FOTOS APARECERÁN AQUÍ</div>';
       if(nota) nota.innerHTML = "//// Estamos preparando tus fotos y videos; aparecerán aquí muy pronto.";
       $("rHeroBg").style.backgroundImage = this._heroDefault;
       return;
@@ -1299,32 +1405,132 @@ const RIDER = {
     const total = c.fotos_totales;
     if(nota) nota.innerHTML = (fotos.length >= 4
       ? "//// Estas son solo algunas fotos de <b>muestra</b>. " + (total ? "Tu galería completa tiene <b>" + total + " archivos</b>; descárgalos" : "Tu galería completa está") + " en el botón «⬇ Descargar TODAS mis fotos». "
-      : "//// ") + "Seguimos editando y subiendo <b>más fotos y videos</b> que se irán agregando a tu cuenta.";
+      : "//// ") + "Seguimos editando y subiendo <b>más fotos y videos</b> que se irán agregando a tu cuenta. Toca una foto para verla en grande.";
     const { data: urls } = await SB.storage.from("fotos").createSignedUrls(fotos.map(f => f.ruta), 3600);
     const portada = (urls || []).map(x => x?.signedUrl).find(Boolean);
     if(portada) $("rHeroBg").style.backgroundImage = "url('" + portada + "')";
+    const items = [];
     fotos.forEach((f, i) => {
       const u = urls?.[i]?.signedUrl; if(!u) return;
+      const etiqueta = f.frame || String(i+1).padStart(4,"0");
+      const idx = items.length;
+      items.push({ url: u, video: !!f.es_video, cap: "Toma <b>" + etiqueta + "</b>" + (c.numero != null ? " · Nº " + c.numero : ""), dl: u });
       const d = document.createElement("div"); d.className = "pitem";
       d.innerHTML = (f.es_video
-          ? '<video src="' + u + '" muted loop playsinline style="width:100%;height:100%;object-fit:cover"></video>'
-          : '<img loading="lazy" alt="Toma ' + (f.frame || i+1) + '">') +
-        '<span class="num">' + (f.frame || String(i+1).padStart(4,"0")) + '</span>' +
+          ? '<video src="' + u + '" muted loop playsinline preload="metadata"></video>'
+          : '<img loading="lazy" alt="Toma ' + etiqueta + '">') +
+        '<span class="num">' + etiqueta + '</span>' +
+        (f.publica ? '<span class="web" title="Esta foto se muestra en la página principal">🌐</span>' : '') +
         '<button class="fav' + (f.favorita ? ' on' : '') + '" aria-label="Favorita">★</button>' +
-        '<a class="dl" href="' + u + '" download target="_blank" rel="noopener">Descargar original ↓</a>';
-      const img = d.querySelector("img"); if(img){ img.src = u; img.style.cursor = "zoom-in"; img.addEventListener("click", () => abrirFoto(u)); }
+        '<a class="dl" href="' + u + '" download target="_blank" rel="noopener">Descargar original ↓</a>' +
+        (this.preview
+          ? '<div class="adm">' +
+              (f.es_video ? '' : '<button type="button" data-r="-90" title="Girar a la izquierda">↺</button><button type="button" data-r="90" title="Girar a la derecha">↻</button>') +
+              '<button type="button" data-pub class="' + (f.publica ? 'on' : '') + '" title="' + (f.publica ? 'Quitar de la página principal' : 'Mostrar en la página principal') + '">🌐</button>' +
+              '<button type="button" data-del title="Eliminar esta foto">✕</button>' +
+            '</div>'
+          : '');
+      const media = d.querySelector("img, video");
+      if(media){
+        if(media.tagName === "IMG") media.src = u;
+        media.style.cursor = "zoom-in";
+        media.addEventListener("click", () => LB.open(items, idx));
+      }
       d.querySelector(".fav").addEventListener("click", async e => {
         const on = e.target.classList.toggle("on");
         await SB.from("fotos").update({ favorita: on }).eq("id", f.id);
       });
+      if(this.preview){
+        d.querySelectorAll("[data-r]").forEach(b => b.addEventListener("click", () => ADMIN.rotarFoto(f, +b.dataset.r, d, c)));
+        d.querySelector("[data-pub]").addEventListener("click", () => ADMIN.togglePublica(f, d, c));
+        d.querySelector("[data-del]").addEventListener("click", () => ADMIN.borrarFoto(f, d, c));
+      }
       g.appendChild(d);
     });
+  },
+
+  /* Barra de herramientas del admin en la vista previa (permiso del corredor + publicar todas). */
+  pintarGalAdmin(c, fotos){
+    const box = $("galAdmin"); if(!box) return;
+    if(!this.preview){ box.style.display = "none"; box.innerHTML = ""; return; }
+    const e = c._estado || {};
+    const pub = fotos.filter(f => f.publica).length;
+    let permiso;
+    if(!e.usuario_id) permiso = '<b>Sin acceso aún</b> — sus fotos públicas NO se verán en la página hasta que entre y acepte la autorización.';
+    else if(!e.acepta_terminos) permiso = '<b>Aún no acepta</b> la autorización de uso de imagen (la acepta al entrar por 1ª vez) — sus fotos públicas NO se verán todavía.';
+    else permiso = '<b>Autorizó</b> el uso de imagen' + (e.acepta_compartir ? ' y compartir en la web' : '') + ' — sus fotos marcadas 🌐 SÍ se ven en la página.';
+    box.style.display = "flex";
+    box.innerHTML = '<div class="mini">🛠 <b>Herramientas admin</b> · ↺ ↻ giran y guardan la foto · 🌐 la muestra/oculta en la página principal · ✕ la elimina<br>' + permiso + ' · <b>' + pub + '</b> de ' + fotos.length + ' en la web</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="btn sm ghost" type="button" data-a="todas">🌐 Publicar todas</button>' +
+        '<button class="btn sm ghost" type="button" data-a="ninguna">Ocultar todas</button>' +
+      '</div>';
+    box.querySelector('[data-a="todas"]').addEventListener("click", () => ADMIN.publicarCorredor(c, true));
+    box.querySelector('[data-a="ninguna"]').addEventListener("click", () => ADMIN.publicarCorredor(c, false));
   }
 };
 
-/* lightbox: ver la foto ampliada al centro de la pantalla */
-function abrirFoto(url){ $("lightboxImg").src = url; $("lightbox").style.display = "flex"; }
-$("lightbox").addEventListener("click", () => { $("lightbox").style.display = "none"; $("lightboxImg").src = ""; });
+/* ---------- LIGHTBOX: foto ampliada con ← → , teclado, swipe y descarga ---------- */
+const LB = {
+  items: [], i: 0,
+  open(items, i){
+    this.items = items || []; this.i = i || 0;
+    if(!this.items.length) return;
+    const lb = $("lightbox");
+    lb.classList.add("open"); lb.classList.toggle("multi", this.items.length > 1);
+    document.body.classList.add("lb-open");
+    this.show();
+  },
+  close(){
+    const lb = $("lightbox"); lb.classList.remove("open");
+    document.body.classList.remove("lb-open");
+    const v = $("lightboxVid"); v.pause(); v.removeAttribute("src"); v.load();
+    $("lightboxImg").src = "";
+  },
+  show(){
+    const it = this.items[this.i]; if(!it) return;
+    const img = $("lightboxImg"), vid = $("lightboxVid");
+    if(it.video){
+      img.style.display = "none"; img.src = "";
+      vid.style.display = "block"; vid.src = it.url; vid.play().catch(() => {});
+    } else {
+      vid.pause(); vid.removeAttribute("src"); vid.style.display = "none";
+      img.style.display = "block"; img.src = it.url;
+    }
+    $("lbCap").innerHTML = it.cap || "";
+    $("lbCount").innerHTML = this.items.length > 1 ? "<b>" + (this.i + 1) + "</b> / " + this.items.length : "";
+    const dl = $("lbDl");
+    if(it.dl){ dl.href = it.dl; dl.style.display = ""; } else { dl.style.display = "none"; }
+    /* precargar vecinas para que el ← → sea instantáneo */
+    [this.i + 1, this.i - 1].forEach(k => { const n = this.items[(k + this.items.length) % this.items.length]; if(n && !n.video){ const p = new Image(); p.src = n.url; } });
+  },
+  go(d){
+    const n = this.items.length; if(n < 2) return;
+    this.i = (this.i + d + n) % n; this.show();
+    if(window.ENG) ENG.blip(220 + this.i * 10);
+  }
+};
+window.LB = LB;
+/* compatibilidad: abrir una sola foto */
+function abrirFoto(url){ LB.open([{ url }], 0); }
+(function(){
+  const lb = $("lightbox");
+  lb.addEventListener("click", e => {
+    /* clic fuera de la imagen (o sobre ella) cierra; los botones y la leyenda no */
+    if(e.target === lb || e.target.id === "lightboxImg" || e.target === $("lbFig")) LB.close();
+  });
+  $("lbClose").addEventListener("click", () => LB.close());
+  $("lbPrev").addEventListener("click", e => { e.stopPropagation(); LB.go(-1); });
+  $("lbNext").addEventListener("click", e => { e.stopPropagation(); LB.go(1); });
+  let sx = null, sy = null;
+  lb.addEventListener("touchstart", e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  lb.addEventListener("touchend", e => {
+    if(sx === null) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if(Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy)) LB.go(dx < 0 ? 1 : -1);
+    sx = sy = null;
+  }, { passive: true });
+})();
 
 /* registrar cuando el corredor abre su link de descarga */
 $("dlAll").addEventListener("click", () => {
@@ -1539,6 +1745,19 @@ const ADMIN = {
     const { data, error } = await SB.rpc("estado_corredores", { p_proyecto_id: this.proyecto.id });
     if(error){ console.warn("estado_corredores:", error.message); }
     this._cs = error ? [] : (data || []);
+    /* cuántas fotos de cada corredor están publicadas en la galería de la página */
+    const aviso = $("webAviso");
+    try {
+      const ids = this._cs.map(c => c.id);
+      const r = ids.length ? await SB.from("fotos").select("corredor_id").eq("publica", true).in("corredor_id", ids) : { data: [] };
+      if(r.error) throw r.error;
+      const m = {}; (r.data || []).forEach(f => { m[f.corredor_id] = (m[f.corredor_id] || 0) + 1; });
+      this._cs.forEach(c => { c.fotos_web = m[c.id] || 0; });
+      if(aviso) aviso.style.display = "none";
+    } catch(e){
+      console.warn("fotos.publica:", e.message);
+      if(aviso){ aviso.style.display = "block"; aviso.textContent = "⚠ La galería pública aún no está activa en la base de datos: ejecuta sql/galeria_publica.sql en el SQL Editor de Supabase (" + e.message + ")"; }
+    }
     /* poblar el filtro una sola vez */
     const fsel = $("filtroEstatus");
     if(fsel && !fsel.options.length){
@@ -1563,8 +1782,9 @@ const ADMIN = {
         linea2 = [ "✉ " + (c.email || "sin correo"),
                    (c.ultimo_acceso ? "entró " + fdate(c.ultimo_acceso) : "aún no entra"),
                    (c.descarga_veces ? "⬇ descargó " + c.descarga_veces + "×" : "sin descargar"),
-                   (c.acepta_compartir ? '🌐 comparte <a href="#" data-a="quitarcomp" style="color:#D97B7B">(quitar)</a>' : '') ].filter(Boolean).join(" · ");
-      } else { linea2 = "sin acceso aún"; }
+                   (c.acepta_compartir ? '🌐 comparte <a href="#" data-a="quitarcomp" style="color:#D97B7B">(quitar)</a>' : (c.acepta_terminos ? '✓ autorizó uso de imagen' : 'sin autorización aún')),
+                   (c.fotos_web ? '🖼 ' + c.fotos_web + ' en la web' : '') ].filter(Boolean).join(" · ");
+      } else { linea2 = "sin acceso aún" + (c.fotos_web ? ' · 🖼 ' + c.fotos_web + ' marcadas para la web (se verán cuando entre y acepte)' : ''); }
       tr.innerHTML = '<td class="n">#' + (c.numero ?? "—") + '</td>' +
         '<td>' + c.nombre +
           (linea1 ? '<div class="mini">' + linea1 + '</div>' : '') +
@@ -1606,6 +1826,8 @@ const ADMIN = {
     const { data } = await SB.from("corredores").select("*, proyectos(nombre, fecha, disciplina, ubicacion)").eq("id", c.id).single();
     if(!data){ alert("No se pudo cargar el corredor."); return; }
     RIDER.preview = true;
+    data._estado = c; /* flags de acceso/permiso que vienen de estado_corredores */
+    $("riderPortal").classList.add("preview");
     $("previewBanner").style.display = "flex";
     $("previewName").textContent = "#" + (data.numero ?? "—") + " · " + data.nombre;
     $("ajustesPanel").style.display = "none";
@@ -1620,13 +1842,88 @@ const ADMIN = {
 
   cerrarPreview(){
     $("riderPortal").classList.remove("open");
+    $("riderPortal").classList.remove("preview");
     $("riderPortal").style.zIndex = "";
     RIDER.preview = false;
+    $("galAdmin").style.display = "none";
+    if(this.proyecto) this.loadClients();
     $("previewBanner").style.display = "none";
     $("ajustesPanel").style.display = "";
     $("teleEditPanel").style.display = "";
     $("riderLogout").style.display = "";
     $("riderWho").innerHTML = "Sesión iniciada";
+  },
+
+  /* ---- Fotos: girar y guardar (arregla las que se subieron volteadas) ---- */
+  async rotarFoto(f, grados, d, c){
+    if(f.es_video) return;
+    const busy = document.createElement("div"); busy.className = "busy"; busy.textContent = "Girando…"; d.appendChild(busy);
+    try {
+      const { data: s, error: e1 } = await SB.storage.from("fotos").createSignedUrl(f.ruta, 600);
+      if(e1 || !s) throw (e1 || new Error("No se pudo leer la foto"));
+      const blob = await (await fetch(s.signedUrl)).blob();
+      /* createImageBitmap respeta la orientación EXIF, así lo que se gira es lo que se ve */
+      const bmp = await createImageBitmap(blob);
+      const cv = document.createElement("canvas");
+      cv.width = bmp.height; cv.height = bmp.width;
+      const cx = cv.getContext("2d");
+      cx.translate(cv.width / 2, cv.height / 2);
+      cx.rotate(grados * Math.PI / 180);
+      cx.drawImage(bmp, -bmp.width / 2, -bmp.height / 2);
+      bmp.close && bmp.close();
+      const esPng = /\.png$/i.test(f.ruta);
+      const out = await new Promise(res => cv.toBlob(res, esPng ? "image/png" : "image/jpeg", 0.92));
+      if(!out) throw new Error("No se pudo procesar la imagen");
+      const base = f.ruta.split("/").pop().replace(/^\d+-/, "").replace(/\.(jpe?g|png|webp|heic|tiff?|bmp|gif)$/i, "") + (esPng ? ".png" : ".jpg");
+      const nueva = f.corredor_id + "/" + Date.now() + "-" + base;
+      const { error: e2 } = await SB.storage.from("fotos").upload(nueva, out, { contentType: out.type, upsert: false });
+      if(e2) throw e2;
+      const { error: e3 } = await SB.from("fotos").update({ ruta: nueva }).eq("id", f.id);
+      if(e3) throw e3;
+      /* el archivo viejo ya no se usa; si no se puede borrar no pasa nada */
+      SB.storage.from("fotos").remove([f.ruta]).catch(() => {});
+      f.ruta = nueva;
+      await RIDER.pintarFotos(c);
+    } catch(e){
+      busy.remove();
+      alert("No se pudo girar la foto: " + (e.message || e));
+    }
+  },
+
+  async togglePublica(f, d, c){
+    const nuevo = !f.publica;
+    const { error } = await SB.from("fotos").update({ publica: nuevo }).eq("id", f.id);
+    if(error){ alert("No se pudo cambiar: " + error.message + "\n\nSi dice que la columna 'publica' no existe, ejecuta sql/galeria_publica.sql en Supabase."); return; }
+    f.publica = nuevo;
+    await RIDER.pintarFotos(c);
+  },
+
+  async borrarFoto(f, d, c){
+    if(!confirm("¿Eliminar esta foto del portal del corredor? No se puede deshacer.")) return;
+    const busy = document.createElement("div"); busy.className = "busy"; busy.textContent = "Eliminando…"; d.appendChild(busy);
+    const { error } = await SB.from("fotos").delete().eq("id", f.id);
+    if(error){ busy.remove(); alert("No se pudo eliminar: " + error.message); return; }
+    SB.storage.from("fotos").remove([f.ruta]).catch(() => {});
+    await RIDER.pintarFotos(c);
+  },
+
+  async publicarCorredor(c, valor){
+    const { error } = await SB.from("fotos").update({ publica: valor }).eq("corredor_id", c.id);
+    if(error){ alert("No se pudo cambiar: " + error.message + "\n\nSi dice que la columna 'publica' no existe, ejecuta sql/galeria_publica.sql en Supabase."); return; }
+    await RIDER.pintarFotos(c);
+  },
+
+  async publicarProyecto(valor){
+    if(!this.proyecto) return;
+    const ids = (this._cs || []).map(c => c.id);
+    if(!ids.length){ alert("Este proyecto no tiene corredores."); return; }
+    const msg = valor
+      ? "Marcar TODAS las fotos de " + this.proyecto.nombre + " para la galería pública de la página.\n\nSolo se verán las de corredores que ya aceptaron la autorización de uso de imagen al entrar a su portal.\n\n¿Continuar?"
+      : "Quitar TODAS las fotos de " + this.proyecto.nombre + " de la galería pública de la página.\n\n¿Continuar?";
+    if(!confirm(msg)) return;
+    const { error } = await SB.from("fotos").update({ publica: valor }).in("corredor_id", ids);
+    if(error){ alert("No se pudo cambiar: " + error.message + "\n\nSi dice que la columna 'publica' no existe, ejecuta sql/galeria_publica.sql en Supabase."); return; }
+    await this.loadClients();
   },
 
   async quitarCompartir(c){
@@ -1867,11 +2164,99 @@ async function subirZip(f, cid){
   filaOk(head);
 }
 
-/* sesión persistente: si ya inició sesión, abrir su portal */
-window.addEventListener("load", () => { APP.route(); });
+/* ---------- GALERÍA PÚBLICA DE LA ÚLTIMA CARRERA (página principal) ---------- */
+/* Lee fotos_publicas() (RPC anónima): solo fotos marcadas 🌐 por el admin de corredores que
+   aceptaron la autorización de uso de imagen. Si no hay nada (o falla), la sección no se muestra. */
+const PUB = {
+  rows: [], proyectos: [], pid: null, num: "", lista: [], items: [], mostradas: 0, PAGE: 24,
+  async init(){
+    try {
+      const { data, error } = await SB.rpc("fotos_publicas");
+      if(error || !data || !data.length){ if(error) console.warn("fotos_publicas:", error.message); return; }
+      this.rows = data;
+      const m = new Map();
+      data.forEach(r => {
+        if(!m.has(r.proyecto_id)) m.set(r.proyecto_id, { id: r.proyecto_id, nombre: r.proyecto, disciplina: r.disciplina, fecha: r.fecha, ubicacion: r.ubicacion, n: 0 });
+        m.get(r.proyecto_id).n++;
+      });
+      this.proyectos = [...m.values()];
+      $("galeria").style.display = "";
+      $("navGaleria").style.display = "";
+      const gp = $("galProyectos");
+      if(this.proyectos.length > 1){
+        gp.style.display = "flex";
+        gp.innerHTML = this.proyectos.map(p => '<button class="chip-btn" type="button" data-p="' + p.id + '">' + p.nombre + ' (' + p.n + ')</button>').join("");
+        gp.addEventListener("click", e => { const b = e.target.closest("[data-p]"); if(b) this.proyecto(b.dataset.p); });
+      }
+      $("galChips").addEventListener("click", e => { const b = e.target.closest("[data-n]"); if(b) this.filtrar(b.dataset.n); });
+      $("galMas").addEventListener("click", () => this.render(false));
+      await this.proyecto(this.proyectos[0].id);
+    } catch(e){ console.warn("galería pública:", e); }
+  },
+  fmtFecha(f){
+    if(!f) return ""; const d = new Date(f + "T12:00:00");
+    return isNaN(d) ? f : d.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+  },
+  async proyecto(pid){
+    this.pid = pid; this.num = "";
+    const p = this.proyectos.find(x => x.id === pid) || this.proyectos[0];
+    document.querySelectorAll("#galProyectos .chip-btn").forEach(b => b.classList.toggle("on", b.dataset.p === pid));
+    $("galEyebrow").textContent = "Última carrera" + (p.fecha ? " — " + this.fmtFecha(p.fecha) : "") + (p.ubicacion ? " · " + p.ubicacion : "");
+    const partes = (p.nombre || "Galería").split(" ");
+    const corte = Math.ceil(partes.length / 2);
+    $("galTitulo").innerHTML = partes.length > 2 ? partes.slice(0, corte).join(" ") + "<br>" + partes.slice(corte).join(" ") : (p.nombre || "Galería");
+    const rows = this.rows.filter(r => r.proyecto_id === pid);
+    /* firmar todas las URLs de una vez (política de storage: solo las fotos públicas) */
+    const { data: urls } = await SB.storage.from("fotos").createSignedUrls(rows.map(r => r.ruta), 3600);
+    this.lista = rows.map((r, i) => ({ r, url: urls?.[i]?.signedUrl })).filter(x => x.url);
+    const nums = [...new Set(this.lista.map(x => x.r.numero).filter(n => n != null))].sort((a, b) => a - b);
+    $("galChips").innerHTML = '<button class="chip-btn on" type="button" data-n="">Todas (' + this.lista.length + ')</button>' +
+      nums.map(n => '<button class="chip-btn" type="button" data-n="' + n + '">#' + n + '</button>').join("");
+    this.render(true);
+  },
+  filtrar(n){
+    this.num = n;
+    document.querySelectorAll("#galChips .chip-btn").forEach(b => b.classList.toggle("on", b.dataset.n === n));
+    this.render(true);
+  },
+  render(reset){
+    const g = $("pubgal");
+    const p = this.proyectos.find(x => x.id === this.pid) || {};
+    const sel = this.lista.filter(x => !this.num || String(x.r.numero) === this.num);
+    if(reset){ g.innerHTML = ""; this.mostradas = 0; this.items = sel.map(x => ({ url: x.url, video: !!x.r.es_video, cap: (x.r.numero != null ? "Nº <b>" + x.r.numero + "</b> · " : "") + (p.nombre || "") })); }
+    const lote = sel.slice(this.mostradas, this.mostradas + this.PAGE);
+    lote.forEach((x, k) => {
+      const idx = this.mostradas + k;
+      const fig = document.createElement("figure"); fig.className = "pg";
+      fig.style.animationDelay = (k * 40) + "ms";
+      fig.innerHTML = (x.r.es_video
+          ? '<video src="' + x.url + '" muted loop playsinline preload="metadata"></video><span class="vid">▶</span>'
+          : '<img loading="lazy" src="' + x.url + '" alt="Corredor ' + (x.r.numero != null ? "#" + x.r.numero : "") + ' — ' + (p.nombre || "") + '">') +
+        '<figcaption class="tag"><span>' + (x.r.numero != null ? 'Nº <em>' + x.r.numero + '</em>' : '') + '</span><span>' + (p.disciplina || "") + '</span></figcaption>';
+      fig.addEventListener("click", () => LB.open(this.items, idx));
+      g.appendChild(fig);
+    });
+    this.mostradas += lote.length;
+    if(!sel.length) g.innerHTML = '<div class="pub-empty">//// Todavía no hay fotos públicas de este evento</div>';
+    $("galMeta").textContent = "//// " + this.mostradas + " de " + sel.length + " fotos" + (this.num ? " del Nº " + this.num : "");
+    $("galMas").style.display = this.mostradas < sel.length ? "" : "none";
+    $("galMas").textContent = "Ver más fotos (" + Math.max(0, sel.length - this.mostradas) + ")";
+  }
+};
 
-/* cerrar con Escape */
-document.addEventListener("keydown", e => { if(e.key === "Escape") closePortals(); });
+/* sesión persistente: si ya inició sesión, abrir su portal; y cargar la galería pública */
+window.addEventListener("load", () => { APP.route(); PUB.init(); });
+
+/* teclado: Escape cierra el lightbox (o los portales); ← → navegan las fotos */
+document.addEventListener("keydown", e => {
+  if($("lightbox").classList.contains("open")){
+    if(e.key === "Escape") LB.close();
+    else if(e.key === "ArrowRight") LB.go(1);
+    else if(e.key === "ArrowLeft") LB.go(-1);
+    return;
+  }
+  if(e.key === "Escape") closePortals();
+});
 </script>
 
 <script>
@@ -1994,11 +2379,11 @@ document.getElementById("sndBtn").addEventListener("click", () => ENG.toggle());
   addEventListener("mousemove", e => { mx=e.clientX; my=e.clientY; dot.style.left=mx+"px"; dot.style.top=my+"px"; });
   (function loop(){ rx+=(mx-rx)*.16; ry+=(my-ry)*.16;
     ring.style.left=rx+"px"; ring.style.top=ry+"px"; requestAnimationFrame(loop); })();
-  const HOV = "a,button,select,input,.sw,.pitem,.frame,.disc,.proj";
+  const HOV = "a,button,select,input,.sw,.pitem,.frame,.disc,.proj,.pg";
   document.addEventListener("mouseover", e => {
     const h = e.target.closest(HOV);
     ring.classList.toggle("hov", !!h);
-    if(h){ cl.textContent = h.matches(".frame,.pitem") ? "VER" : h.matches(".sw") ? "COLOR" : "IR"; ENG.blip(300 + Math.random()*160); }
+    if(h){ cl.textContent = h.matches(".frame,.pitem,.pg") ? "VER" : h.matches(".sw") ? "COLOR" : "IR"; ENG.blip(300 + Math.random()*160); }
   });
 })();
 
